@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """工程文件夹建树核心（foldertree）—— 原 pt-project-folder-builder 迁入
 
-2026-09-27 · D 档 F7+R2 合并（甲案）：folder-builder 整体并入 rename-unify，
+2026-09-27 · D 档 F7+R2 合并（甲案）：folder-builder 整体并入 rename-project，
 作为第 5 页签「5 · 工程文件夹」。本模块是**纯逻辑层**（零 tkinter），
 GUI 只负责收集参数 → 调 plan_creation / apply_plan → 展示计划。
-（沿用 rename-unify「壳不动芯」原则：逻辑可独立跑测试。）
+（沿用 rename-project「壳不动芯」原则：逻辑可独立跑测试。）
 
 为什么要合并：三套命名字段链本就同构（Q4 判定）——
-rename-unify 的 片名/集数/日期/版本/用户、folder-builder 的 项目名/等级/日期/用户、
+rename-project 的 片名/集数/日期/版本/用户、folder-builder 的 项目名/等级/日期/用户、
 剪映的 视频名解析。合并后共用一条字段捕获链，不再各填一遍、各解析一遍。
 
-铁律（沿用 rename-unify）：**不补零、已合规不动**。
+铁律（沿用 rename-project）：**不补零、已合规不动**。
 铁律（沿用 folder-builder）：copy 步骤**必须先确认源可复制再动目标**——
 早期写成「先 os.remove 旧文件 → 再判断源是否存在」，模板 .ptx 一旦在规划后
 被移走/改名，就会删掉旧文件却不复制回来（不可逆数据丢失）。2026-09-23 修复。
@@ -120,7 +120,7 @@ def parse_project_root_name(dirname):
 def infer_fields_from_output(output_root):
     """F6：从输出根下「序号最大」的项目根文件夹提取命名字段。
 
-    返回 dict（name/level/date/user）或 None。与 rename-unify 的字段捕获链
+    返回 dict（name/level/date/user）或 None。与 rename-project 的字段捕获链
     同源思路：**源名捕获 > 目录推断**，这里取「目录推断」的一条。
     """
     if not output_root or not os.path.isdir(output_root):

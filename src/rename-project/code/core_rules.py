@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""rename-unify 核心规则引擎 v1.2.0（与 GUI 完全解耦，可独立测试）
+"""rename-project 核心规则引擎 v1.2.0（与 GUI 完全解耦，可独立测试）
 
 v1.2.0 设计改变（2026-09-23）
 -----------------------------
@@ -1075,7 +1075,7 @@ def write_audit(audit_path, rows, meta=None):
     if folder and not os.path.isdir(folder):
         os.makedirs(folder, exist_ok=True)
     payload = {
-        "app": "rename-unify",
+        "app": "rename-project",
         "audit_version": 1,
         "created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "meta": dict(meta or {}),

@@ -2,7 +2,7 @@
 .ARCHIVED
     2026-09-21 归档于此（原 D:\My-Temporary\示例混音按集归位.ps1）。
 
-    本脚本的能力已移植为纯 Python 并**并入 rename-unify 主流程**：
+    本脚本的能力已移植为纯 Python 并**并入 rename-project 主流程**：
       · 引擎 code/core_rules.py: build_regroup_plan() / apply_regroup()
       · 界面 「3 · 预览与执行」页 →「按集归位」选项组
     日常请直接用 exe，不要再单独跑本脚本；保留它是为了行为对照与回溯。

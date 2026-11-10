@@ -1,4 +1,4 @@
-# 统一命名工具 (rename-unify) v1.2.0
+# Rename Project (rename-project) v1.2.0
 
 把音效/影视交付目录里的杂乱文件名，按统一规范批量改名、并按目标归类归位。
 规则可随时改，改完存为默认。
@@ -11,7 +11,7 @@
 
 ## 运行前提
 
-- Windows。双击 `rename-unify.exe` 即可，**无需安装 Python**。
+- Windows。双击 `rename-project.exe` 即可，**无需安装 Python**。
 - 首次运行会在 exe 旁生成 `config.json`（记住你的项目信息与目录）。
 - 不需要 Pro Tools / 剪映等任何外部程序在线。
 
@@ -142,13 +142,13 @@
 
 ## 分发清单
 
-- `rename-unify.exe` + `_internal\`（PyInstaller `--onedir`，**整目录分发**）
+- `rename-project.exe` + `_internal\`（PyInstaller `--onedir`，**整目录分发**）
 - 本说明文件
 
 ## 目录结构（源码）
 
 ```
-rename-unify\
+rename-project\
   code\
     core_rules.py    规则引擎（目标 + 轨道信息模型，零依赖，可独立测试）
     config.py        配置读写 + {档位}→{用户} 迁移 + frozen 路径锚点

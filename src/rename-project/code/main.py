@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""统一命名工具 (rename-unify) —— 音效/影视交付文件批量命名统一
+"""Rename Project (rename-project) —— 音效/影视交付文件批量命名统一
 
 设计原则
 --------
@@ -305,7 +305,7 @@ class App(TkinterDnD.Tk if _TKDND_OK else tk.Tk):
     def _build_ui(self):
         # v3.12.0：顶部横幅（大图标色块 + 标题）
         hdr = HeroHeader(
-            self, title="统一命名工具",
+            self, title="Rename Project",
             subtitle="v%s · %s" % (CFG.APP_VERSION, CFG.build_date()),
             icon="edit")
         hdr.pack(fill="x")
@@ -1040,7 +1040,7 @@ class App(TkinterDnD.Tk if _TKDND_OK else tk.Tk):
     # ============ 页4：回溯与撤销 ============
     # ============ 页5：工程文件夹（v1.7.0 · D 档合并 F7+R2 / 甲案）============
     def _build_folder_tab(self):
-        """原 pt-project-folder-builder 整体迁入 rename-unify 第 5 页签。
+        """原 pt-project-folder-builder 整体迁入 rename-project 第 5 页签。
 
         合并要点（Q4 判定「三套命名字段链同构」）：
           · 项目名默认取**页1 的「片名」**，两处不再各填一遍（一条字段捕获链）；
@@ -1968,7 +1968,7 @@ class App(TkinterDnD.Tk if _TKDND_OK else tk.Tk):
         data = self._collect_rules_payload()
         p = filedialog.asksaveasfilename(
             title="导出规则集", defaultextension=".json",
-            initialfile="rename-unify-rules.json",
+            initialfile="rename-project-rules.json",
             filetypes=[("JSON", "*.json"), ("全部文件", "*.*")])
         if not p:
             return

@@ -1,4 +1,4 @@
-# rename-unify build entry (thin wrapper around tools/build.py).
+# rename-project build entry (thin wrapper around tools/build.py).
 #
 # Real build logic: <repo>\tools\build.py
 # Why not run PyInstaller directly from PowerShell: it writes progress to STDERR,
@@ -11,7 +11,7 @@
 # non-ASCII bytes can corrupt parsing.
 #
 # Behavior note (2026-09-23): output now goes to the unified exe root
-# (<out-root>\pt-audio-toolkit-v<version>-<date>\rename-unify\).
+# (<out-root>\pt-audio-toolkit-v<version>-<date>\rename-project\).
 # The old "flatten into the project root + archive previous build to _history"
 # behavior is gone -- it was a second, competing output location.
 $ErrorActionPreference = "Stop"
@@ -30,5 +30,5 @@ if (-not (Test-Path -LiteralPath $builder)) {
 }
 
 Write-Host "[info] delegating to $builder"
-python $builder rename-unify @args
+python $builder rename-project @args
 exit $LASTEXITCODE

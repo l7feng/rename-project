@@ -2,7 +2,7 @@
 """Episode recognition regressions; uses persisted pre-fix rules and no real writes."""
 import sys, unittest, re
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'src/rename-unify/code'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]/'src/rename-project/code'))
 import core_rules as c
 
 class EpisodeRecognition(unittest.TestCase):

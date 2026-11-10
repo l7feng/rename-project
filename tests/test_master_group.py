@@ -2,7 +2,7 @@ import sys,tempfile,unittest,os,csv,json
 from pathlib import Path
 from unittest.mock import patch
 from types import SimpleNamespace
-ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'src/rename-unify/code'));sys.path.insert(0,str(ROOT/'src/v4'))
+ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT/'src/rename-project/code'));sys.path.insert(0,str(ROOT/'src/v4'))
 import core_rules as c
 from api.re_api import ReApi
 
