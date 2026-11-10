@@ -44,7 +44,7 @@
  }
  function translate(raw){return language==='en'?english(raw):String(raw);}
  function protectedData(el){
-  if(el.closest('[data-i18n-data],script,style,svg,#tplSample,#ftNameSample,#cfgEpisodeSample,#runDirSample,#runFileSummary,#manualFile,#pendingList label,.m-name,.histrow td,.trow'))return true;
+  if(el.closest('[data-i18n-data],script,style,svg,#tplSample,#ftNameSample,#cfgEpisodeSample,#cfgProjectSample,#runDirSample,#runFileSummary,#manualFile,#pendingList label,.m-name,.histrow td,.trow'))return true;
   // Table cells contain file names and user data. Translate only explicitly tagged status cells and buttons.
   return !!el.closest('td')&&!el.closest('button,select,option,[data-i18n-ui]');
  }

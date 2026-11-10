@@ -5,7 +5,7 @@
   const key='pt-h-v2-'+tool;
   const themes=[['dark','中性灰（深）'],['claude','暖陶灰（浅）'],['warm','暖夜棕（深）'],['ocean','深海蓝（深）']];
   const skip=new Set(['tplNewName','tplNewBody','manEp','manTarget','manInfo','libSearch']);
-  let controls=[],dirty=new Set(),saved={},timer,revision=0,bridgeLoaded=false,restoring=false,queue=Promise.resolve();
+  let controls=[],dirty=new Set(),saved={},timer,revision=0,bridgeLoaded=false,restoring=false,userSwitchedPage=false,queue=Promise.resolve();
   try{saved=JSON.parse(localStorage.getItem(key)||'{}')||{};}catch(e){}
   const api=()=>window.pywebview&&window.pywebview.api;
   function status(text,error=false){const el=document.getElementById('saveStatus');if(el){el.textContent=text;el.classList.toggle('error',error);}}
@@ -21,7 +21,7 @@
     controls.forEach(el=>{if(dirty.has(el.id)||!Object.prototype.hasOwnProperty.call(data.fields||{},el.id))return;const value=data.fields[el.id];if(['checkbox','radio'].includes(el.type)){if(typeof value==='boolean')el.checked=value;}else if(typeof value==='string'&&(!el.matches('select')||Array.from(el.options).some(o=>o.value===value)))el.value=value;});
     if(!dirty.has('@language'))setLanguage(data.language||'zh-CN',false);
     if(!dirty.has('@theme'))setTheme(data.theme||'dark',false);
-    if(!dirty.has('@page')&&data.page&&document.getElementById('tab-'+data.page))document.getElementById('tab-'+data.page).click();
+    if(!userSwitchedPage&&!dirty.has('@page')&&data.page&&document.getElementById('tab-'+data.page))document.getElementById('tab-'+data.page).click();
     const more=document.getElementById('moreTools');if(more&&typeof data.moreOpen==='boolean')more.open=data.moreOpen;
     restoring=false;window.dispatchEvent(new Event('parametersrestored'));
   }
@@ -37,7 +37,7 @@
     controls=Array.from(document.querySelectorAll('.page input[id],.page select[id],.page textarea[id]')).filter(el=>!skip.has(el.id)&&!el.closest('.tbl-wrap,#manualBox,#pendingBox')&&!['password','file','hidden','button'].includes(el.type));
     controls.forEach(el=>{el.addEventListener('input',()=>schedule(el));el.addEventListener('change',()=>schedule(el));});
     document.getElementById('modeSw').onclick=()=>{const i=themes.findIndex(t=>t[0]===document.documentElement.dataset.mode);setTheme(themes[(i+1)%themes.length][0]);};
-    document.addEventListener('click',e=>{if(e.target.closest('[id^="tab-"]')&&!restoring){dirty.add('@page');schedule();}});
+    document.addEventListener('click',e=>{if(e.target.closest('[id^="tab-"]')&&!restoring){userSwitchedPage=true;dirty.add('@page');schedule();}});
 
     document.addEventListener('keydown',e=>{if(e.key==='Escape'){const more=document.getElementById('moreTools');if(more)more.open=false;}});
     document.addEventListener('click',e=>{const more=document.getElementById('moreTools');if(more?.open&&!e.target.closest('.more-tools'))more.open=false;});

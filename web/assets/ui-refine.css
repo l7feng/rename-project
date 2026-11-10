@@ -1,0 +1,233 @@
+/* v4.3.8 UI 精简层：只作用于 body.ui-refine，运行时由 ui-refine.js 添加。
+   全部使用现有主题变量，主题切换仍然生效；不改动任何既有 HTML 节点 id。 */
+[hidden]{display:none!important}
+body.ui-a{--ui-trash:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M4 7h16M9.5 7V5.2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7M6.6 7l.8 12.1A2 2 0 0 0 9.4 21h5.2a2 2 0 0 0 2-1.9L17.4 7M10 11v6M14 11v6' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round'/></svg>")}
+
+/* ── 步骤条与操作条 ── */
+body.ui-refine .ui-steps{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;font-size:12px;color:var(--faint)}
+body.ui-refine .ui-step{display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border:1px solid var(--border);border-radius:999px;background:var(--surface);white-space:nowrap}
+body.ui-refine .ui-step i{width:17px;height:17px;border-radius:50%;background:var(--input);color:var(--dim);font-style:normal;font-size:10.5px;display:grid;place-items:center;font-weight:600}
+body.ui-refine .ui-step.on{color:var(--fg);border-color:var(--accent)}
+body.ui-refine .ui-step.on i{background:var(--accent);color:var(--btn-primary-fg)}
+body.ui-refine .ui-step.done{color:var(--green)}
+body.ui-refine .ui-step.done i{background:var(--green);color:#101418}
+body.ui-refine .ui-arrow{font-size:12px;color:var(--faint)}
+
+body.ui-refine .action-toolbar.ui-actionbar{gap:14px!important}
+body.ui-refine .action-toolbar.ui-actionbar .action-buttons{gap:10px!important;align-items:center!important}
+body.ui-refine .ui-keep{display:none!important}
+body.ui-refine .ui-mode-btn{min-height:38px;padding:7px 18px;white-space:nowrap}
+body.ui-refine .ui-mode-btn:disabled{opacity:.6;cursor:wait}
+body.ui-refine #btnCancelPlan,
+body.ui-refine #btnFtPlan{background:transparent!important;border-color:transparent!important;color:var(--dim)!important;text-decoration:underline;text-underline-offset:3px;padding:5px 8px!important;min-height:30px!important;box-shadow:none!important}
+body.ui-refine .ui-state{display:flex;align-items:center;gap:8px;margin-left:auto;font-size:12px;color:var(--dim);border:1px solid var(--border);border-radius:999px;padding:5px 12px;white-space:nowrap;max-width:46%;overflow:hidden;text-overflow:ellipsis}
+body.ui-refine .ui-state .toolbar-hint{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px!important}
+body.ui-refine .ui-dot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex:none}
+body.ui-refine .ui-state.ok{color:var(--green)}
+body.ui-refine .ui-state.ok .ui-dot{background:var(--green)}
+
+/* ── 分组折叠 ── */
+body.ui-refine #page-run .cols>.card:first-child,
+body.ui-refine #page-folder .cols>.card:first-child{padding:12px!important}
+body.ui-refine .ui-group{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:0 14px;margin:0 0 12px}
+body.ui-refine .ui-group>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 0;font-size:13px;font-weight:600;color:var(--fg)}
+body.ui-refine .ui-group>summary::-webkit-details-marker{display:none}
+body.ui-refine .ui-group>summary::before{content:"▸";color:var(--faint);font-size:12px;flex:none}
+body.ui-refine .ui-group[open]>summary::before{content:"▾"}
+body.ui-refine .ui-group[open]>summary{border-bottom:1px solid var(--border)}
+body.ui-refine .ui-gidx{width:20px;height:20px;border-radius:6px;background:var(--input);color:var(--dim);font-size:11px;display:grid;place-items:center;font-weight:500;flex:none}
+body.ui-refine .ui-sum{margin-left:auto;font-size:11px;color:var(--faint);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:54%}
+body.ui-refine .ui-body{padding:12px 0 14px;display:flex;flex-direction:column;gap:12px}
+
+/* 说明降权：缩进、小字、淡色 */
+body.ui-refine .ui-note{font-size:11.5px!important;color:var(--faint)!important;line-height:1.55;margin:0 0 0 24px!important}
+body.ui-refine .ui-footnote{font-size:11.5px!important;color:var(--faint)!important;line-height:1.6;margin:2px 2px 0!important}
+
+/* 从属块：缩进到对应开关之下 */
+body.ui-refine .ui-subfield{margin:0!important;padding:10px 12px!important;border-left:2px solid var(--border)!important;border-radius:0 10px 10px 0!important;background:var(--input)!important}
+body.ui-refine .ui-subfield.off{opacity:.5}
+body.ui-refine .ui-flat-fold{border:0!important;padding:0!important;margin:0!important;border-radius:0!important;background:transparent!important}
+body.ui-refine .ui-flat-fold>summary{display:none!important}
+body.ui-refine .ui-flat-fold>*:not(summary){margin-top:8px}
+
+/* 开关行：原生 checkbox 改画成 switch，绑定与状态不变 */
+body.ui-refine label.check.ui-switch{display:grid!important;grid-template-columns:auto 1fr;align-items:center;gap:3px 10px;margin:2px 0!important;color:var(--fg)!important}
+body.ui-refine label.check.ui-switch input[type=checkbox]{appearance:none;-webkit-appearance:none;width:34px;height:20px;margin:0;border-radius:999px;background:var(--input);border:1px solid var(--border);position:relative;cursor:pointer;grid-row:1;grid-column:1}
+body.ui-refine label.check.ui-switch input[type=checkbox]::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--faint);transition:transform .15s}
+body.ui-refine label.check.ui-switch input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+body.ui-refine label.check.ui-switch input[type=checkbox]:checked::after{transform:translateX(14px);background:#fff}
+body.ui-refine label.check.ui-switch>span{grid-column:2;grid-row:1;font-size:12.5px;color:var(--fg)}
+
+/* ── 右侧预览：常驻展开 ── */
+body.ui-refine .ui-preview{position:sticky;top:64px;display:flex;flex-direction:column;min-height:320px}
+body.ui-refine .ui-preview>h2{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+body.ui-refine .ui-last{font-size:11px;color:var(--faint);border:1px solid var(--border);border-radius:999px;padding:2px 9px;margin-left:auto}
+body.ui-refine .ui-preview .tbl-wrap,
+body.ui-refine .ui-preview pre.ui-tree{flex:1;min-height:250px;max-height:min(56vh,520px);overflow:auto}
+body.ui-refine .ui-preview pre.ui-tree{font-family:ui-monospace,Consolas,"Cascadia Mono","Microsoft YaHei",monospace;line-height:1.7;white-space:pre}
+body.ui-refine .ui-last-table button{display:none}
+body.ui-refine .ui-preview-foot{font-size:11.5px;color:var(--dim);border-top:1px solid var(--border);padding-top:10px;margin-top:10px}
+
+@media(max-width:1100px){
+  body.ui-refine .ui-preview{position:static}
+  body.ui-refine .ui-state{margin-left:0;max-width:100%}
+}
+
+/* ═══ A 布局（2026-11-10）：顶栏合并导航 · 固定视口 · 预览吃满 · 日志抽屉 ═══ */
+
+/* 顶栏：logo/标题/导航/主题同一行 56px */
+body.ui-a header.hero{flex:none;height:56px;min-height:56px;margin:0;padding:0 14px;border:0;border-bottom:1px solid var(--border);border-radius:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;background:var(--head);flex-wrap:nowrap;gap:10px}
+body.ui-a header.hero .brand-mark{width:30px;height:30px;border-radius:8px}
+body.ui-a header.hero h1{font-size:15px;font-weight:650;white-space:nowrap}
+body.ui-a header.hero .ver{font-size:10.5px;margin-left:0;color:var(--faint);border:1px solid var(--border);border-radius:999px;padding:1px 7px;white-space:nowrap}
+body.ui-a header.hero .spacer{flex:0 0 4px}
+body.ui-a header.hero .mode-sw{min-height:30px;padding:4px 10px;font-size:11.5px;white-space:nowrap}
+body.ui-a header.hero .save-status{display:none}
+body.ui-a header.hero .save-status.error{display:inline;color:var(--red);font-size:11px}
+body.ui-a header.hero nav.tabs{margin:0;padding:0;background:transparent;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;flex:1;min-width:0;gap:2px;flex-wrap:nowrap;overflow-x:auto;height:100%;align-items:center;scrollbar-width:none}
+body.ui-a header.hero nav.tabs::-webkit-scrollbar{display:none}
+body.ui-a header.hero nav.tabs .tab{min-height:32px;padding:5px 12px;font-size:12.5px;border-radius:999px;border:1px solid transparent;background:transparent;top:0;white-space:nowrap;gap:6px}
+body.ui-a header.hero nav.tabs .tab .icon{width:15px;height:15px;stroke-width:1.8}
+body.ui-a header.hero nav.tabs .tab.on{background:var(--accent);color:var(--btn-primary-fg);border-color:var(--accent)}
+body.ui-a header.hero nav.tabs .tab.auxiliary{font-size:12px;padding:5px 9px}
+body.ui-a header.hero nav.tabs .nav-gap{display:none}
+
+/* 主区：固定视口，页面自己撑满，表内滚动 */
+body.ui-a main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding:10px 12px}
+body.ui-a .page{display:none;min-height:0}
+body.ui-a .page.on{display:flex;flex-direction:column;gap:10px;flex:1;min-height:0}
+body.ui-a #page-rule.on{overflow:auto}
+body.ui-a #page-rule .cols,
+body.ui-a #page-rule .legacy-formats{flex:none}
+
+/* 工作条：步骤条收进条内，不再单独占一行 */
+body.ui-a .naming-nav~main .action-toolbar{position:static;margin:0;padding:8px 10px;flex:none;border-radius:14px;box-shadow:none;gap:10px}
+body.ui-a .action-toolbar .ui-steps{margin:0;gap:6px;flex:none}
+body.ui-a .action-toolbar .ui-step{padding:3px 9px;font-size:11.5px;background:transparent}
+body.ui-a .action-toolbar .ui-step i{width:15px;height:15px;font-size:10px}
+body.ui-a .action-toolbar .ui-state{margin-left:auto}
+
+/* 三区工作台：左设置固定宽，右预览吃满高度 */
+body.ui-a #page-run .cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+body.ui-a #page-folder .cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+body.ui-a #page-undo .cols{grid-template-columns:440px minmax(0,1fr)}
+body.ui-a .ui-target-grid{grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr)}
+body.ui-a #page-run .cols,
+body.ui-a #page-folder .cols,
+body.ui-a #page-undo .cols,
+body.ui-a .ui-target-grid{flex:1;min-height:0;align-items:stretch;gap:12px}
+body.ui-a .cols>.card{min-height:0;height:100%}
+body.ui-a #page-run .cols>.card:first-child,
+body.ui-a #page-folder .cols>.card:first-child{overflow:auto;padding:12px 14px;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
+body.ui-a #page-run .cols>.card:first-child::-webkit-scrollbar,
+body.ui-a #page-folder .cols>.card:first-child::-webkit-scrollbar{width:8px;height:8px}
+body.ui-a #page-run .cols>.card:first-child::-webkit-scrollbar-thumb,
+body.ui-a #page-folder .cols>.card:first-child::-webkit-scrollbar-thumb{background:var(--dim);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
+body.ui-a #page-target .ui-target-grid>.card:first-child{display:flex;flex-direction:column;overflow:hidden;padding:12px 14px}
+body.ui-a #page-target .ui-target-grid>.card:first-child>*{flex:none}
+body.ui-a #page-target #tgtTbl{flex:1;min-height:160px;max-height:none}
+/* 分类去向：单行紧凑表，表头只占一行；删除按钮只留图标 */
+body.ui-a #page-target #tgtTbl table{table-layout:fixed;font-size:12.5px;letter-spacing:.01em}
+body.ui-a #page-target #tgtTbl th,
+body.ui-a #page-target #tgtTbl td{padding:5px 7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
+body.ui-a #page-target #tgtTbl thead th{font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--dim);border-bottom:1px solid var(--border)}
+body.ui-a #page-target #tgtTbl th:nth-child(1){width:6%!important;padding-left:6px;padding-right:4px}
+body.ui-a #page-target #tgtTbl th:nth-child(2){width:13.5%!important}
+body.ui-a #page-target #tgtTbl th:nth-child(3){width:14%!important}
+body.ui-a #page-target #tgtTbl th:nth-child(4){width:9%!important}
+body.ui-a #page-target #tgtTbl th:nth-child(5){width:auto!important}
+body.ui-a #page-target #tgtTbl th:nth-child(6){width:25%!important}
+body.ui-a #page-target #tgtTbl th:nth-child(7){width:40px!important}
+body.ui-a #page-target #tgtTbl tr>td:last-child{padding:5px 6px}
+body.ui-a #page-target #tgtTbl tbody tr:hover td{background:var(--sel)}
+body.ui-a #page-target #tgtTbl :is(input[type=text],select){width:100%!important;min-width:0!important;height:28px;padding:0 8px;background:var(--input);color:var(--fg);border:1px solid var(--border);border-radius:7px;font:12.5px/1.3 inherit;letter-spacing:0;outline:none}
+body.ui-a #page-target #tgtTbl :is(input[type=text],select):focus{border-color:var(--accent)}
+body.ui-a #page-target #tgtTbl input[data-format]{display:block;margin-top:4px}
+body.ui-a #page-target #tgtTbl input[data-format]:disabled{display:none}
+body.ui-a #page-target #tgtTbl input[type=checkbox]{width:16px;height:16px;margin:0}
+body.ui-a #page-target #tgtTbl .btn[data-del]{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;min-height:0;padding:0;border:0;border-radius:7px;background:transparent;color:var(--faint);font-size:0}
+body.ui-a #page-target #tgtTbl .btn[data-del]:hover{color:var(--red);background:var(--sel)}
+body.ui-a #page-target #tgtTbl .btn[data-del]::before{content:"";width:14px;height:14px;background:currentColor;-webkit-mask:var(--ui-trash) center/contain no-repeat;mask:var(--ui-trash) center/contain no-repeat}
+body.ui-a #page-run .field:has(#runRoot),
+body.ui-a #page-run .field:has(#runExts),
+body.ui-a #page-undo .field:has(#undoRoot){flex-wrap:wrap;gap:6px}
+body.ui-a #page-run .field:has(#runRoot) label,
+body.ui-a #page-run .field:has(#runExts) label,
+body.ui-a #page-undo .field:has(#undoRoot) label{width:100%;text-align:left}
+body.ui-a #page-undo .cols>.card:first-child{display:flex;flex-direction:column;overflow:hidden;padding:12px 14px}
+body.ui-a #page-undo .cols>.card:first-child>*{flex:none}
+body.ui-a #page-undo #logTbl{flex:1;min-height:120px;max-height:none;margin-top:8px!important}
+
+body.ui-a .ui-preview{position:static;height:100%;min-height:0;overflow:hidden;padding:12px 14px;top:auto}
+body.ui-a .ui-preview>h2{flex:none;margin-bottom:8px}
+body.ui-a .ui-preview .tbl-wrap,
+body.ui-a .ui-preview .ui-last-table{flex:1;min-height:0;max-height:none}
+body.ui-a .ui-preview pre.ui-tree{flex:1;min-height:0;max-height:none;overflow:auto;margin:0}
+body.ui-a .ui-preview .ui-preview-foot{flex:none;margin-top:8px;padding-top:6px}
+body.ui-a #manualBox{flex:none;max-height:42%;overflow:auto}
+
+/* 预览工具条：状态筛选 + 搜索 */
+body.ui-a .ui-preview-tools{display:flex;align-items:center;gap:8px;flex:none;margin:0 0 8px;flex-wrap:wrap}
+body.ui-a .ui-seg{display:flex;background:var(--input);border:1px solid var(--border);border-radius:999px;padding:2px;gap:2px}
+body.ui-a .ui-seg button{border:0;background:transparent;color:var(--dim);font:inherit;font-size:11.5px;padding:3px 10px;border-radius:999px;cursor:pointer}
+body.ui-a .ui-seg button:hover{color:var(--fg)}
+body.ui-a .ui-seg button.on{background:var(--accent);color:var(--btn-primary-fg);font-weight:600}
+body.ui-a .ui-search{flex:1;min-width:120px;max-width:260px;background:var(--input);border:1px solid var(--border);border-radius:999px;color:var(--fg);font:inherit;font-size:11.5px;padding:4px 10px;outline:none}
+body.ui-a .ui-search:focus{border-color:var(--accent)}
+body.ui-a .ui-shown{margin-left:auto;font-size:11px;color:var(--faint);white-space:nowrap}
+body.ui-a #planTbl tr.ui-hide{display:none}
+/* 计划表在 1:1 窄栏里改为固定列宽 + 单行省略，完整路径保留在 title */
+body.ui-a #planTbl table{table-layout:fixed;font-size:11.5px}
+body.ui-a #planTbl th,
+body.ui-a #planTbl td{padding:4px 6px;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.ui-a #planTbl thead th:nth-child(1){width:52px!important}
+body.ui-a #planTbl thead th:nth-child(2){width:66px!important}
+body.ui-a #planTbl thead th:nth-child(3){width:28%!important}
+body.ui-a #planTbl thead th:nth-child(4){width:auto!important}
+body.ui-a #planTbl thead th:nth-child(5){width:60px!important}
+body.ui-a #planTbl thead th:nth-child(6){width:36px!important}
+body.ui-a #planTbl.no-note thead th:nth-child(5),
+body.ui-a #planTbl.no-note tbody td:nth-child(5){display:none}
+body.ui-a #planTbl.no-note thead th:nth-child(3){width:35%!important}
+body.ui-a .ui-preview .tbl-wrap thead th,
+body.ui-a #page-target #tgtTbl thead th,
+body.ui-a #page-undo #logTbl thead th{position:sticky;top:0;z-index:1;background:var(--input)}
+
+/* 日志抽屉 */
+body.ui-a .logwrap{flex:none;margin:8px 0 0!important;padding:6px 0 0;border-top:1px solid var(--border)}
+body.ui-a .logwrap .loghead{margin:0;cursor:pointer;user-select:none;gap:8px}
+body.ui-a .logwrap .loghead b{font-size:11.5px}
+body.ui-a .logwrap .loghead .dock-hint{display:none}
+body.ui-a .logwrap .loghead .dock-clear{margin-left:auto;min-height:24px;padding:2px 9px;font-size:10.5px;background:transparent;border:1px solid var(--border);border-radius:999px;color:var(--faint)}
+body.ui-a .logwrap .loghead .dock-chev{color:var(--faint);font-size:12px;line-height:1;transition:transform .15s}
+body.ui-a .logwrap .loghead>span:last-child{display:inline}
+body.ui-a .logwrap.closed .dock-chev{transform:rotate(180deg)}
+body.ui-a .logwrap.closed .log{display:none}
+body.ui-a .logwrap .log{height:96px;margin-top:6px;border-radius:12px;font-size:11.5px;line-height:1.6}
+body.ui-a .logwrap .log-actions{display:none}
+body.ui-a .logwrap.dock-bottom{margin-top:auto!important;padding:8px 2px 0;border-top:0}
+body.ui-a .logwrap.dock-bottom .log{height:120px}
+
+/* 紧凑化：分组与说明在固定高度里多放内容 */
+body.ui-a .ui-group{margin-bottom:10px;padding:0 12px}
+body.ui-a .ui-group>summary{padding:10px 0}
+body.ui-a .ui-body{padding:10px 0 12px;gap:10px}
+body.ui-a .ui-footnote{margin-bottom:0!important}
+
+@media(max-width:1180px){
+  body.ui-a #page-undo .cols{grid-template-columns:400px minmax(0,1fr)}
+}
+@media(max-width:1100px){
+  body.ui-a main{overflow:auto}
+  body.ui-a .page.on{display:block}
+  body.ui-a #page-run .cols,
+  body.ui-a #page-folder .cols,
+  body.ui-a #page-undo .cols,
+  body.ui-a .ui-target-grid{grid-template-columns:minmax(0,1fr);height:auto}
+  body.ui-a .cols>.card{height:auto;min-height:0}
+  body.ui-a .cols>.card.ui-preview{height:auto;min-height:360px}
+  body.ui-a .ui-preview .tbl-wrap,
+  body.ui-a .ui-preview pre.ui-tree{max-height:56vh}
+  body.ui-a .ui-state{margin-left:0;max-width:100%}
+  body.ui-a header.hero h1{display:none}
+}

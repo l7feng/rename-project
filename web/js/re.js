@@ -69,14 +69,35 @@ window.__onReEvent = onShellEvent;
 /* ── 页签路由 ── */
 const PAGES = ["rule", "target", "run", "undo", "folder"];
 function goto(page) {
-  document.querySelector("main").scrollTop = 0;
+  if (!PAGES.includes(page)) return false;
+  const main = document.querySelector("main");
+  if (main) main.scrollTop = 0;
+  let switched = false;
   PAGES.forEach((p) => {
-    $("page-" + p).classList.toggle("on", p === page);
-    $("tab-" + p).classList.toggle("on", p === page);
+    const panel = $("page-" + p), tab = $("tab-" + p);
+    if (panel) { panel.classList.toggle("on", p === page); if (p === page) switched = true; }
+    if (tab) tab.classList.toggle("on", p === page);
   });
+  if (switched) state.page = page;
+  return switched;
 }
 function bindTabs() {
-  PAGES.forEach(p=>{$('tab-'+p).onclick=()=>goto(p);});
+  /* 事件委托：页签按钮被重建、onclick 被覆盖或绑定链中断时，点击仍然生效。
+     捕获阶段监听，避免页面内脚本 stopPropagation 吞掉切换。 */
+  const nav = document.querySelector("nav.naming-nav") || document.querySelector("nav.tabs");
+  if (!nav || nav.dataset.tabsBound === "1") return;
+  nav.dataset.tabsBound = "1";
+  nav.addEventListener("click", (event) => {
+    const tab = event.target.closest('[id^="tab-"]');
+    if (!tab || !nav.contains(tab)) return;
+    const page = tab.id.slice(4);
+    if (!PAGES.includes(page)) return;
+    if (!goto(page)) log("页签切换失败：找不到 page-" + page + "，请重启工具", "err");
+  }, true);
+  PAGES.forEach((p) => {
+    const tab = $("tab-" + p);
+    if (tab) tab.onclick = () => goto(p);
+  });
 }
 
 /* ── 风格 / 主题切换（家族级偏好，与 pt/剪映共用一份配置） ── */
@@ -660,8 +681,12 @@ async function init() {
   window.dispatchEvent(new Event('toolready'));
 }
 window.addEventListener("pywebviewready", init);
-if (HAS_BRIDGE()) { setTimeout(init, 50); }
-else { document.addEventListener("DOMContentLoaded", init); }
+/* 三重兜底：DOM 已就绪立刻初始化；未就绪等事件；桥接晚注入时定时重试。
+   init 自带 inited / bridgeLoaded 幂等守卫，重复调用只补齐缺失的链。 */
+if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+else init();
+setTimeout(init, 50);
+setTimeout(init, 400);
 
 window.addEventListener('parametersrestored', () => { syncFormats(); updateSample(); updateNamingSamples(); });
 
@@ -694,7 +719,12 @@ function updateNamingSamples() {
   }
   $("runGroupSummary").textContent=$("runRenameDirs").checked ? $("runDirFormat").value + " → " + $("runDirSample").textContent : t("已关闭");
   $("runGroupSummary").title=$("runGroupSummary").textContent;
-  $("cfgEpisodeSample").textContent=$("ftNameSample").textContent;
+  for(const [inputId,outId,fields,padding,required] of [["cfgProjectFormat","cfgProjectSample",ft,0,false],["cfgEpisodeFormat","cfgEpisodeSample",ft,+$("cfgEpisodePadding").value,true]]) {
+    const el=$(inputId),out=$(outId);let error="";
+    try{out.textContent=folderExample(el.value,fields,padding,required);}
+    catch(e){error=e.message;out.textContent=window.ToolI18n.translate(error);}
+    el.setCustomValidity(error);
+  }
   for (const [output, value] of [["ftTemplateSummary",$("ftTplRoot").value || "—"],["ftProjectSummary",$("ftProjectFormat").value],["ftEpisodeSummary",$("ftEpFormat").value + " → " + $("ftNameSample").textContent]]) {
     $(output).textContent=value;$(output).title=value;
   }

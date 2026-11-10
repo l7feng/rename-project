@@ -70,3 +70,8 @@ html[data-mode="ocean"] .re-apple-ui{--re-canvas:#1b222b;--re-panel:#252e3a;--re
 
 .re-apple-ui #ftOutRoot.drop-active{outline:2px solid var(--re-primary);outline-offset:3px;background:var(--re-soft)}
 .re-apple-ui #ftDropHint,.re-apple-ui #ftDropStatus{margin:0 0 10px 0}.re-apple-ui #ftDropStatus{overflow-wrap:anywhere}.re-apple-ui #ftDropStatus.error{color:var(--red)}
+
+/* 格式框内右侧实时预览（浅色字） */
+.re-apple-ui .fmt-wrap{position:relative;flex:1;min-width:0;display:flex}
+.re-apple-ui .fmt-wrap input[type=text]{width:100%;padding-right:110px}
+.re-apple-ui .fmt-preview{position:absolute;right:16px;top:50%;transform:translateY(-50%);max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;font-size:12px;color:var(--re-muted);opacity:.8}

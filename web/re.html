@@ -7,6 +7,7 @@
 <link rel="icon" href="assets/logos/r.ico">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/rename-apple.css">
+<link rel="stylesheet" href="assets/ui-refine.css">
 </head>
 <body class="re-apple-ui">
 <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
@@ -37,13 +38,12 @@
       </section>
       <section class="card px-hl">
         <h2>工程目录格式 <span class="tag">用于新建工程目录</span></h2>
-        <div class="field"><label for="cfgProjectFormat">项目根目录格式</label><input type="text" id="cfgProjectFormat" value="{片名}{等级}_{日期}_{用户}"></div>
+        <div class="field"><label for="cfgProjectFormat">项目根目录格式</label><div class="fmt-wrap"><input type="text" id="cfgProjectFormat" value="{片名}{等级}_{日期}_{用户}"><span class="fmt-preview" id="cfgProjectSample" aria-hidden="true"></span></div></div>
         <div class="format-fields" data-insert="cfgProjectFormat" data-fields="片名,等级,日期,用户"></div>
-        <div class="field"><label for="cfgEpisodeFormat">集数文件夹格式</label><input type="text" id="cfgEpisodeFormat" value="{片名} {集数}集"></div>
+        <div class="field"><label for="cfgEpisodeFormat">集数文件夹格式</label><div class="fmt-wrap"><input type="text" id="cfgEpisodeFormat" value="{片名} {集数}集"><span class="fmt-preview" id="cfgEpisodeSample" aria-hidden="true"></span></div></div>
         <div class="format-fields" data-insert="cfgEpisodeFormat" data-fields="片名,等级,集数,日期,用户"></div>
         <div class="field"><label for="cfgEpisodePadding">集数位数</label><select id="cfgEpisodePadding"><option value="0">不补零</option><option value="2">两位</option><option value="3">三位</option></select></div>
         <div class="note">与“新建工程目录”页同步；修改后自动记住。序号填写后自动加在项目根目录前。</div>
-        <div class="inner">实时样例：<code id="cfgEpisodeSample">—</code></div>
       </section>
     </div>
     <details class="card legacy-formats"><summary>既有分类格式（兼容保留）</summary>
@@ -273,5 +273,6 @@
 <script src="js/glass-tuner.js"></script>
 <script src="js/rename-apple.js"></script>
 <script src="js/re-folder-drop.js"></script>
+<script src="js/ui-refine.js"></script>
 </body>
 </html>
