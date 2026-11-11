@@ -1,0 +1,29 @@
+      ReNamer's Quick Guide
+
+      Using ReNamer is very simple. Just follow the diagram and the four steps shown below.
+
+Step                                                           What to do
+
+ 1    Select the files from various folders and add them to the working area.
+           a. Change default behavior for the Add Folders button (optional step)
+ 2         b. Add individually selected files (Add Files) and/or all files in selected folders (Add
+ 3              Folders), and/or...
+ 4         c. Drag-n-drop files from Windows Explorer (or any other application) in this area (called
+                "Files pane").
+
+      Add rules to create a sequence. Delete or edit an existing rule. Change the order of the rules.
+           a. Allows addition and deletion of rules. Also change the order of any rule in the stack.
+           b. Click in this area to add a rule (or to edit an existing rule, or just move it to a new position
+                in the list)
+
+      Preview the results (check before proceeding with the actual renaming)
+           a. Set options (e.g. highlight changed names, experiment with your own text, resolve
+                conflicts, etc.)
+           b. Click to see preview the new file names in the bottom pane (not required in auto-preview
+                mode)
+
+      Press this button to rename files and folders.
+
+ReNamer is so intuitive that you would be able to use it without reading the manual. Additional information
+and manuals are available on the web site www.den4b.com.
+
