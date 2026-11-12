@@ -172,6 +172,35 @@
     });
   }
 
+  /* ── 页 3 模式联动：仅命名 Master 时，锁定不参与打包的规则 ──
+     锁定范围（runParams("master-only") 中被强制覆盖的项）：
+     G3「高级规则」整组 + G2 内「分组文件夹改名」开关及其「命名格式」子项。
+     由 re.js syncPlanControls 在每次模式/状态同步时调用；初始态在 boot 里补一次。 */
+  function applyModeLock(mode) {
+    const masterOnly = mode === "master-only";
+    const setDisabled = (root, on) => {
+      if (!root) return;
+      root.querySelectorAll("input, button, select, textarea").forEach((n) => {
+        if (on) {
+          if (!n.dataset.uiWasDisabled) n.dataset.uiWasDisabled = n.disabled ? "1" : "0";
+          if (n.dataset.uiWasDisabled === "0") n.disabled = true;
+        } else if (n.dataset.uiWasDisabled) {
+          if (n.dataset.uiWasDisabled === "0") n.disabled = false;
+          delete n.dataset.uiWasDisabled;
+        }
+      });
+    };
+    const g3 = $("uiGroupRun3");
+    if (g3) { g3.classList.toggle("ui-locked", masterOnly); setDisabled(g3, masterOnly); }
+    [ $("runRenameDirs") && $("runRenameDirs").closest("label.check"),
+      $("runGroupDetails") ].forEach((n) => {
+      if (!n) return;
+      n.classList.toggle("ui-locked-item", masterOnly);
+      setDisabled(n, masterOnly);
+    });
+  }
+  window.uiApplyModeLock = applyModeLock;
+
   /* ── 页 5 工具栏 + 左栏分组 ── */
   function refineFolderToolbar() {
     const bar = document.querySelector("#page-folder .action-toolbar");
@@ -564,6 +593,7 @@
       bindLiveTree();
       bindFlow();
       updateFlow();
+      applyModeLock((typeof state !== "undefined" && state) ? state.planMode : "all");
       /* 页签切换后把日志抽屉移到当前页：点击与代码内 goto() 两种切换都要跟。 */
       document.addEventListener("click", (e) => {
         if (e.target.closest("nav.naming-nav [id^='tab-']")) setTimeout(placeLogDock, 0);
@@ -579,7 +609,7 @@
 
   window.addEventListener("toolready", () => { boot(); autoRefreshTree(); });
   window.addEventListener("parametersrestored", () => {
-    if (booted) { updateFlow(); updateSummaries(); renderTargetTree(); }
+    if (booted) { updateFlow(); updateSummaries(); renderTargetTree(); applyModeLock(state ? state.planMode : "all"); }
     autoRefreshTree();
   });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);

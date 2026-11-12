@@ -284,6 +284,8 @@ function syncPlanControls() {
       : state.planApplying ? "正在执行重命名；不能中途取消，完成后可用改名记录撤销。"
       : state.planReady ? "计划已生成；确认预览后执行，或取消本次计划。"
       : "先生成计划，再执行。");
+  /* 模式联动：仅命名 Master 时锁定不参与打包的规则（ui-refine.js 提供，缺失时静默跳过）。 */
+  if (window.uiApplyModeLock) window.uiApplyModeLock(masterOnly ? "master-only" : "all");
 }
 async function doPlan(mode = state.planMode) {
   if (!api()) { log("演示态：扫描需在壳内运行（python shell/re_desktop.py）", "info"); return; }

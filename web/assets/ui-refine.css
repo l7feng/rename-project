@@ -39,6 +39,19 @@ body.ui-refine .ui-gidx{width:20px;height:20px;border-radius:6px;background:var(
 body.ui-refine .ui-sum{margin-left:auto;font-size:11px;color:var(--faint);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:54%}
 body.ui-refine .ui-body{padding:12px 0 14px;display:flex;flex-direction:column;gap:12px}
 
+/* ── 模式联动锁定：仅命名 Master 时高级规则整组遮罩、打包相关开关变灰 ── */
+body.ui-refine .ui-group.ui-locked>.ui-body{position:relative;opacity:.45;filter:grayscale(1);pointer-events:none}
+body.ui-refine .ui-group.ui-locked>.ui-body::after{
+  content:"仅命名 Master 模式下不参与打包，这些规则已锁定";
+  position:absolute;inset:-2px;display:grid;place-items:center;text-align:center;
+  font-size:11.5px;color:#9fb2c3;background:rgba(10,14,19,.5);
+  border:1px dashed var(--border);border-radius:12px;pointer-events:none;padding:0 18px;
+}
+body.ui-refine .ui-locked-item{opacity:.45;filter:grayscale(1);pointer-events:none}
+body.ui-refine label.check.ui-locked-item input[type=checkbox]{background:var(--input)!important;border-color:var(--border)!important}
+body.ui-refine label.check.ui-locked-item input[type=checkbox]:checked{background:var(--input)!important;border-color:var(--border)!important}
+body.ui-refine label.check.ui-locked-item input[type=checkbox]::after{background:var(--faint)!important}
+
 /* 说明降权：缩进、小字、淡色 */
 body.ui-refine .ui-note{font-size:11.5px!important;color:var(--faint)!important;line-height:1.55;margin:0 0 0 24px!important}
 body.ui-refine .ui-footnote{font-size:11.5px!important;color:var(--faint)!important;line-height:1.6;margin:2px 2px 0!important}
