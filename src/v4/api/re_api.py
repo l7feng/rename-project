@@ -53,6 +53,11 @@ def _re() -> dict:
         return _RE
 
 
+def _plan_canceled():
+    """延迟取 core_rules.PlanCanceled（核心模块懒加载，不能在导入期引用）。"""
+    return _re()["core"].PlanCanceled
+
+
 def _log_class(line: str) -> str:
     if re.search(r"失败|错误|Traceback|error|\[✗\]", line, re.I):
         return "err"
@@ -77,6 +82,7 @@ class ReApi(HPreferencesMixin):
         self._init_h_preferences("re")
         self._task_lock = threading.Lock()
         self._busy = False
+        self._cancel = threading.Event()   # 中止请求：长任务在检查点自行退出
         self._plan_ctx = None      # plan → apply 的计划上下文（前端持有 items 亦可）
 
     # ---------- 界面偏好（家族级：与 pt-tools 共用 ptools C2 配置层） ----------
@@ -141,13 +147,30 @@ class ReApi(HPreferencesMixin):
         except Exception:
             pass
 
-    def _run_bg(self, job, done_msg: str = "✓ 任务完成") -> dict:
+    def _run_bg(self, job, done_msg: str = "✓ 任务完成", cancellable: bool = True) -> dict:
         with self._task_lock:
             if self._busy:
                 return {"ok": False, "message": "已有任务在进行中（看日志区）"}
             self._busy = True
+            self._cancel.clear()
+            self._cancellable = bool(cancellable)
         threading.Thread(target=self._worker, args=(job, done_msg), daemon=True).start()
-        return {"ok": True, "message": "任务已启动（后台执行，日志区看进度）"}
+        return {"ok": True, "message": "任务已启动（后台执行，日志区看进度）",
+                "cancellable": bool(cancellable)}
+
+    def cancel_task(self) -> dict:
+        """请求中止当前后台任务。只有长扫描/建目录支持中止；改名执行不支持（会留下半成品）。"""
+        with self._task_lock:
+            if not self._busy:
+                return {"ok": False, "message": "当前没有运行中的任务"}
+            if not getattr(self, "_cancellable", True):
+                return {"ok": False, "message": "该任务不支持中止（改名执行请等完成后用改名记录撤销）"}
+            self._cancel.set()
+        self._emit("已请求中止，等待任务在检查点退出…", "info")
+        return {"ok": True, "message": "已请求中止"}
+
+    def _should_stop(self) -> bool:
+        return self._cancel.is_set()
 
     def _worker(self, job, done_msg: str) -> None:
         self._emit_event("busy", True)
@@ -157,12 +180,17 @@ class ReApi(HPreferencesMixin):
             if isinstance(result, dict):
                 ok = bool(result.get("ok", True))
                 tail = result.get("tail") or (done_msg if ok else "✗ 任务失败")
+        except _plan_canceled() as exc:
+            ok = False
+            tail = "■ %s" % exc
+            self._emit(tail, "info")
         except Exception as exc:
             ok = False
             tail = "✗ 任务异常：%s" % exc
             self._emit(tail, "err")
         finally:
             self._busy = False
+            self._cancel.clear()
             self._emit_event("busy", False)
             self._emit_event("done", {"ok": ok, "tail": tail})
 
@@ -229,21 +257,30 @@ class ReApi(HPreferencesMixin):
         rename_subtracks = bool(params.get("rename_subtracks", cfg.get("rename_subtracks", True)))
         ep_dir_template = str(params.get("ep_dir_template", cfg.get("ep_dir_template", "{集数}")))
         paths_arg = params.get("paths")
+        preset_paths = None
         if paths_arg:
-            paths = [os.path.abspath(p) for p in paths_arg
-                     if p and os.path.isfile(p)]
-        else:
-            paths = r["core"].scan_dir(root, recursive=recursive, exts=exts)
-        if not paths:
-            return {"ok": True, "items": [], "stats": {}, "count": 0,
-                    "message": "扫描到 0 个音频文件（检查扩展名/递归开关）"}
+            preset_paths = [os.path.abspath(p) for p in paths_arg if p and os.path.isfile(p)]
 
         def job():
+            # 扫描也放进后台：原先 scan_dir 在 _run_bg 之前同步跑，大批目录会阻塞桥调用，
+            # 前端既看不到「运行中」也没有中止入口。
+            paths = preset_paths
+            if paths is None:
+                self._emit("扫描目录 %s …" % root)
+                paths = r["core"].scan_dir(root, recursive=recursive, exts=exts)
+            if self._should_stop():
+                raise r["core"].PlanCanceled("已中止：目录扫描阶段")
+            if not paths:
+                self._emit("扫描到 0 个音频文件（检查扩展名/递归开关）", "err")
+                self._emit_event("plan", {"items": [], "total": 0, "stats": {},
+                                          "message": "扫描到 0 个音频文件（检查扩展名/递归开关）"})
+                return {"ok": False, "tail": "✗ 扫描到 0 个音频文件"}
             self._emit("扫描 %s：%d 个文件，生成计划中…" % (root, len(paths)))
             items, stats = r["core"].make_plan(
                 paths, template, rules, fields, targets=targets, root=root,
                 date_from_mtime=date_from_mtime, rename_ep_dirs=rename_ep_dirs,
-                rename_files=rename_files, ep_dir_template=ep_dir_template, group_master=group_master, rename_subtracks=rename_subtracks)
+                rename_files=rename_files, ep_dir_template=ep_dir_template, group_master=group_master, rename_subtracks=rename_subtracks,
+                should_stop=self._should_stop)
             self._plan_ctx = {"root": root, "template": template, "fields": fields,
                               "targets": targets, "rules": rules,
                               "rename_ep_dirs": rename_ep_dirs, "rename_files": rename_files, "group_master": group_master, "rename_subtracks": rename_subtracks, "ep_dir_template": ep_dir_template}
@@ -333,7 +370,7 @@ class ReApi(HPreferencesMixin):
                 "emptied": emptied[:50]})
             return {"ok": not failed, "tail": "✓ 重命名及分组完成" if not failed else "✗ 重命名/分组失败，请查看回退日志"}
 
-        return self._run_bg(job, "✓ 改名执行完成")
+        return self._run_bg(job, "✓ 改名执行完成", cancellable=False)
 
     # ---------- 页4：回溯与撤销 ----------
 

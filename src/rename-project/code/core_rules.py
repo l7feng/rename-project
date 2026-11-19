@@ -354,6 +354,11 @@ def templates_for(target, targets, global_template):
 # 单文件：识别 + 生成新名
 # ---------------------------------------------------------------------------
 
+class PlanCanceled(Exception):
+    """计划生成被界面中止（用户点「中止扫描」）。"""
+    pass
+
+
 class RuleError(Exception):
     pass
 
@@ -816,7 +821,7 @@ def count_stats(items):
 
 
 def make_plan(paths, global_template, rules, fields, targets=None, root=None,
-              date_from_mtime=True, rename_ep_dirs=True, rename_files=True, ep_dir_template=None, group_master=True, rename_subtracks=True):
+              date_from_mtime=True, rename_ep_dirs=True, rename_files=True, ep_dir_template=None, group_master=True, rename_subtracks=True, should_stop=None):
     """生成计划：返回 (items, stats)。
 
     安全闸：
@@ -828,6 +833,9 @@ def make_plan(paths, global_template, rules, fields, targets=None, root=None,
 
     字段合成顺序（后者覆盖前者）：全局字段 ← 文件 mtime（仅日期，可关）
     ← 集目录多数票；源名已捕获的字段在 render 里再覆盖一次（最高）。
+
+    should_stop：可选回调，每处理 200 个文件调用一次；返回 True 时抛 PlanCanceled，
+    让界面能在长扫描中真正中止（4.3.9 期间取消按钮在 pending 时被禁用，无中止入口）。
     """
     targets = resolve_targets(targets)
     items = []
@@ -836,7 +844,9 @@ def make_plan(paths, global_template, rules, fields, targets=None, root=None,
         return items, count_stats(items)
     dir_defaults, master_versions = collect_cohort_metadata(paths, rules)
     mtime_dates = collect_mtime_dates(paths) if date_from_mtime else {}
-    for p in paths:
+    for index, p in enumerate(paths):
+        if should_stop is not None and index % 200 == 0 and should_stop():
+            raise PlanCanceled("计划生成已中止（已处理 %d / %d 个文件）" % (index, len(paths)))
         # 集目录级字段（源文件自身捕获的字段在 render 里再覆盖一次，优先级更高）
         eff_fields = dict(fields or {})
         if date_from_mtime:

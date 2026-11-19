@@ -25,25 +25,100 @@ const state = {
   refreshAfterApply: false,
   logSel: null,       // 页4 选中 {kind:'log'|'audit', path}
   manualIdx: -1,
+  planPage: 0,        // 计划表分页（大目录只渲染当前页）
+  planView: [],       // 当前页切片
+  planTotal: 0,
+  planMessage: "",
+  ignorePlanEvent: false,   // 用户取消后屏蔽旧计划事件
 };
+const PLAN_PAGE_SIZE = 200;   // 单页行数上限：5000 项也不会一次性建 3 万节点
 
-/* ── 日志（五页共用一个流） ── */
+/* ── 日志（五页共用一个流；超过上限裁掉最早的，避免长任务堆爆 DOM） ── */
+const LOG_LIMIT = 800;
 function log(msg, cls) {
   const el = $("log");
+  if (!el) return;
   const d = document.createElement("div");
   if (cls) d.className = cls;
   d.textContent = new Date().toTimeString().slice(0, 8) + "  " + msg;
   el.appendChild(d);
+  while (el.childElementCount > LOG_LIMIT) el.removeChild(el.firstElementChild);
   el.scrollTop = el.scrollHeight;
-  $("logCnt").textContent = "（" + (++state.logN) + " 条）";
+  const cnt = $("logCnt");
+  if (cnt) cnt.textContent = "（" + (++state.logN) + " 条）";
 }
 window.__appendLog = (cls, msg) => log(msg, cls || "");
 window.__onReLine = window.__appendLog;   // 浏览器直开兜底（壳会覆盖，行为等价）
+
+/* ── 桥调用统一兜底：异常一律转成可读日志，不留悬空 Promise ── */
+async function callApi(method, ...args) {
+  const bridge = api();
+  if (!bridge) {
+    log("演示态：该操作需在壳内运行", "info");
+    return { ok: false, demo: true, message: "演示态不支持该操作" };
+  }
+  try {
+    const fn = bridge[method];
+    if (typeof fn !== "function") {
+      log("桥接缺少方法：" + method, "err");
+      return { ok: false, message: "桥接缺少方法 " + method };
+    }
+    const r = await fn(...args);
+    return r == null ? { ok: false, message: "桥接无返回" } : r;
+  } catch (e) {
+    const text = (e && e.message) ? e.message : String(e);
+    log("调用失败（" + method + "）：" + text, "err");
+    return { ok: false, message: text };
+  }
+}
+
+/* ── 应用内确认框：替代原生 confirm，保持玻璃界面一致；Esc 取消、焦点回到主按钮 ── */
+function confirmModal(opts) {
+  return new Promise((resolve) => {
+    const title = (opts && opts.title) || "确认操作";
+    const body = (opts && opts.body) || "";
+    const okText = (opts && opts.okText) || "继续";
+    const cancelText = (opts && opts.cancelText) || "取消";
+    const danger = !!(opts && opts.danger);
+
+    const mask = document.createElement("div");
+    mask.className = "re-modal-mask";
+    mask.innerHTML =
+      "<div class='re-modal' role='dialog' aria-modal='true' aria-labelledby='reModalTitle'>" +
+      "<h3 id='reModalTitle'>" + esc(title) + "</h3>" +
+      "<div class='re-modal-body'>" + body.split("\n").map((line) => "<p>" + esc(line) + "</p>").join("") + "</div>" +
+      "<div class='re-modal-actions'>" +
+      "<button type='button' class='btn ghost sm' data-act='cancel'>" + esc(cancelText) + "</button>" +
+      "<button type='button' class='btn " + (danger ? "danger" : "primary") + " sm' data-act='ok'>" + esc(okText) + "</button>" +
+      "</div></div>";
+    document.body.appendChild(mask);
+
+    const prevFocus = document.activeElement;
+    const done = (value) => {
+      mask.remove();
+      document.removeEventListener("keydown", onKey, true);
+      if (prevFocus && typeof prevFocus.focus === "function") prevFocus.focus();
+      resolve(value);
+    };
+    const onKey = (event) => {
+      if (event.key === "Escape") { event.preventDefault(); done(false); }
+      else if (event.key === "Enter" && document.activeElement !== mask.querySelector("[data-act='cancel']")) {
+        event.preventDefault(); done(true);
+      }
+    };
+    mask.querySelector("[data-act='ok']").onclick = () => done(true);
+    mask.querySelector("[data-act='cancel']").onclick = () => done(false);
+    mask.onclick = (event) => { if (event.target === mask) done(false); };
+    document.addEventListener("keydown", onKey, true);
+    mask.querySelector("[data-act='ok']").focus();
+  });
+}
 
 /* ── 壳事件 ── */
 function onShellEvent(name, value) {
   if (name === "busy") {
     state.busy = !!value;
+    if (!state.busy) state.planPending = false;   // 任务收尾：pending 一定不再成立
     $("envBadge").textContent = value ? "⏳ 任务运行中…" : "就绪";
     syncPlanControls();
     if (!state.busy && state.refreshAfterApply) {
@@ -51,7 +126,11 @@ function onShellEvent(name, value) {
       doPlan(state.planMode);
     }
   } else if (name === "plan") {
+    if (state.ignorePlanEvent) return;            // 用户已取消，旧结果不再覆盖界面
     renderPlan(filterPlanForMode(value || {}));
+  } else if (name === "done") {
+    if (!value || !value.ok) state.planPending = false;
+    syncPlanControls();
   } else if (name === "applied") {
     onApplied(value || {});
   } else if (name === "undo") {
@@ -160,7 +239,7 @@ async function saveRule() {
   state.cfg.template = $("tplGlobal").value.trim();
   state.cfg.fields = fieldsFromUi();
   if (!api()) { log("演示态：保存需在壳内运行", "info"); return; }
-  const r = await api().save_config_patch({
+  const r = await callApi("save_config_patch", {
     template: state.cfg.template, fields: state.cfg.fields,
     templates: state.cfg.templates || [], rename_subtracks: $("runRenameSubtracks").checked, group_master: $("runGroupMaster").checked, rename_files: $("runRenameFiles").checked,
     rename_ep_dirs: $("runRenameDirs").checked, ep_dir_template: $("runDirFormat").value.trim(),
@@ -234,7 +313,7 @@ function renderTgtTbl() {
 }
 async function saveTargets() {
   if (!api()) { log("演示态：保存需在壳内运行", "info"); return; }
-  const r = await api().save_config_patch({ targets: (state.cfg && state.cfg.targets) || [], rules: (state.cfg && state.cfg.rules) || [] });
+  const r = await callApi("save_config_patch", { targets: (state.cfg && state.cfg.targets) || [], rules: (state.cfg && state.cfg.rules) || [] });
   log(r.ok ? "✓ " + r.message : "✗ " + r.message, r.ok ? "ok" : "err");
 }
 
@@ -266,21 +345,33 @@ function filterPlanForMode(plan) {
   return { ...plan, items, total: items.length, stats: recomputeStats(items),
     message: items.length ? plan.message : "没有识别到可命名的 Master（MIX）文件" };
 }
+/* 计划区控件状态：唯一出口。busy / planReady / planApplying 三者在这里统一裁决，
+   任何输入控件都不得再直接写 btnApply.disabled（4.3.9 就是三处各写一次导致状态打架）。 */
+function planCount() { return state.stats.rename ?? state.stats[""] ?? 0; }
+function planBad() { return (state.stats.error || 0) + (state.stats.conflict || 0); }
 function syncPlanControls() {
   const masterOnly = state.planMode === "master-only";
-  const pending = state.stats.rename ?? state.stats[""] ?? 0;
-  $("btnApply").textContent = masterOnly ? "▶ 执行 Master 改名" : "▶ 执行重命名";
-  $("btnApply").disabled = state.busy || !state.planReady || !pending;
-  $("btnCancelPlan").hidden = !(state.planReady || state.planPending);
-  $("btnCancelPlan").disabled = state.busy || state.planPending || state.planApplying;
+  const n = planCount();
+  const apply = $("btnApply");
+  apply.textContent = masterOnly ? "▶ 执行 Master 改名" : "▶ 执行重命名";
+  apply.disabled = !!state.busy || !state.planReady || state.planApplying || !n;
+  apply.title = state.planApplying ? "正在执行，请等待完成"
+    : state.busy ? "有其他任务运行中"
+    : !state.planReady ? "请先生成计划"
+    : !n ? "没有待处理的文件" : "";
+  const cancel = $("btnCancelPlan");
+  cancel.hidden = !(state.planReady || state.planPending);
+  /* 扫描中允许中止：planPending 期间「取消」变「中止扫描」，真正打断后台线程。 */
+  cancel.disabled = state.planApplying || (state.busy && !state.planPending);
+  cancel.textContent = state.planPending ? "■ 中止扫描" : "取消本次计划";
   ["planModeAll", "planModeMaster"].forEach((id) => { $(id).disabled = state.busy || state.planPending; });
   $("runModeHint").textContent = masterOnly
-    ? (state.planPending ? "正在生成 Master 专用计划……"
+    ? (state.planPending ? "正在生成 Master 专用计划……可随时中止。"
       : state.planApplying ? "正在执行 Master 改名；不能中途取消，完成后可用改名记录撤销。"
       : state.busy ? "当前有其他任务运行；完成后可继续处理 Master 计划。"
       : state.planReady ? "Master 专用计划：仅改名，文件留在原目录。可执行或取消本次计划。"
       : "Master 专用模式：选择目录后生成计划。")
-    : (state.planPending ? "正在生成计划……"
+    : (state.planPending ? "正在生成计划……可随时中止。"
       : state.planApplying ? "正在执行重命名；不能中途取消，完成后可用改名记录撤销。"
       : state.planReady ? "计划已生成；确认预览后执行，或取消本次计划。"
       : "先生成计划，再执行。");
@@ -295,62 +386,119 @@ async function doPlan(mode = state.planMode) {
   state.planPending = true;
   state.planApplying = false;
   state.planParams = null;
+  state.ignorePlanEvent = false;
   state.items = [];
   state.stats = {};
+  state.planTotal = 0;
+  state.planMessage = "正在生成计划……";
+  /* 占位渲染传 ready=false：不动 planPending，pending 由本函数独占管理 */
   renderPlan({ items: [], total: 0, stats: {}, message: "正在生成计划……" }, false);
-  state.planPending = true;
   syncPlanControls();
+  const bail = (message, cls) => {
+    state.planPending = false;
+    state.planParams = null;
+    renderPlan({ items: [], total: 0, stats: {}, message: message }, false);
+    syncPlanControls();
+    if (cls) log(message, cls);
+  };
   try {
     await window.ToolPrefs.flush();
     const p = runParams(mode);
-  if (mode !== "master-only" && !$("runDirFormat").checkValidity()) { $("runGroupDetails").open=true; $("runDirFormat").reportValidity(); renderPlan({ items: [], total: 0, stats: {}, message: "命名格式无效，未生成计划" }, false); return; }
-    if (!p.root) { renderPlan({ items: [], total: 0, stats: {}, message: "请先选择目标目录" }, false); log("请先选择目标目录", "err"); return; }
+    if (mode !== "master-only" && !$("runDirFormat").checkValidity()) {
+      $("runGroupDetails").open = true;
+      $("runDirFormat").reportValidity();
+      bail("命名格式无效，未生成计划", "err");
+      return;
+    }
+    if (!p.root) { bail("请先选择目标目录", "err"); return; }
     state.planParams = JSON.stringify(p);
-    const r = await api().plan(p);
-    if (!r.ok) { state.planParams = null; state.planPending = false; syncPlanControls(); log("✗ " + r.message, "err"); }
-    else { log("✓ " + r.message, "ok"); if (Array.isArray(r.items)) renderPlan(filterPlanForMode(r)); }
+    const r = await callApi("plan", p);
+    if (!r.ok) { bail("✗ " + r.message, "err"); return; }
+    log("✓ " + r.message, "ok");
+    if (Array.isArray(r.items)) renderPlan(filterPlanForMode(r));
     /* 后台计划结果走 plan 事件；空计划直接清空预览。 */
-  } catch (e) { state.planPending = false; state.planParams = null; syncPlanControls(); log("扫描异常：" + e, "err"); }
+  } catch (e) { bail("扫描异常：" + e, "err"); }
 }
 const STATUS_LABEL = { "": "待处理", skip: "跳过", error: "错误", conflict: "冲突", excluded: "排除" };
+const PLAN_PRIORITY = { "": 0, error: 1, conflict: 1, excluded: 2, skip: 3 };
+
+/* 行内路径压缩：root 只算一次，不再逐行 replaceAll + toLowerCase */
+function makeShortener() {
+  const root = ($("runRoot").value.trim() || "").replaceAll("\\", "/").replace(/\/+$/, "").toLowerCase();
+  return (raw) => {
+    const normalized = String(raw || "").replaceAll("\\", "/");
+    if (root && normalized.toLowerCase().startsWith(root + "/")) return normalized.slice(root.length + 1);
+    return normalized;
+  };
+}
+function planRowHtml(it, index, short) {
+  const cls = it.status === "error" || it.status === "conflict" ? "err"
+    : it.status === "excluded" || it.status === "skip" ? "dim" : "ok";
+  return "<tr class='" + cls + "'><td data-i18n-ui>" + esc(STATUS_LABEL[it.status] || it.status) + "</td>" +
+    "<td>" + esc(it.target || "") + "</td>" +
+    "<td title=\"" + esc(it.src) + "\">" + esc(short(it.src)) + "</td>" +
+    "<td title=\"" + esc(it.dst) + "\">" + (it.changed_ !== false ? esc(short(it.dst)) : "—") + "</td>" +
+    "<td style='font-size:11px;color:var(--dim)'>" + esc(it.note || "") + "</td>" +
+    "<td>" + (it.status === "error" ? "<button class='btn ghost sm' data-man='" + index + "'>手动</button>" : "") + "</td></tr>";
+}
+function appendPlanRows(host, from, to, short) {
+  const body = host.querySelector("tbody");
+  if (!body) return;
+  let html = "";
+  for (let i = from; i < to; i += 1) html += planRowHtml(state.items[i], i, short);
+  body.insertAdjacentHTML("beforeend", html);
+  state.planPage = to;
+}
+function updatePlanMore(host) {
+  const rest = state.items.length - state.planPage;
+  let bar = host.querySelector(".plan-more");
+  if (rest <= 0) { if (bar) bar.remove(); return; }
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.className = "plan-more";
+    bar.style.cssText = "padding:8px 4px;text-align:center";
+    host.appendChild(bar);
+  }
+  bar.innerHTML = "<span style='font-size:11px;color:var(--dim)'>已显示 " + state.planPage +
+    " / " + state.items.length + " 项</span> " +
+    "<button type='button' class='btn ghost sm' data-more='1'>再显示 " +
+    Math.min(PLAN_PAGE_SIZE, rest) + " 项</button>";
+  bar.querySelector("[data-more]").onclick = () => {
+    appendPlanRows(host, state.planPage, Math.min(state.items.length, state.planPage + PLAN_PAGE_SIZE), makeShortener());
+    updatePlanMore(host);
+  };
+}
 function renderPlan(p, ready = true) {
-  const priority = { "": 0, error: 1, conflict: 1, excluded: 2, skip: 3 };
-  state.items = [...(p.items || [])].sort((a, b) => (priority[a.status] ?? 2) - (priority[b.status] ?? 2));
+  state.items = [...(p.items || [])].sort((a, b) => (PLAN_PRIORITY[a.status] ?? 2) - (PLAN_PRIORITY[b.status] ?? 2));
   state.stats = p.stats || {};
   state.planReady = ready;
-  state.planPending = false;
-  const n = state.stats.rename ?? state.stats[""] ?? 0;
-  const bad = (state.stats.error || 0) + (state.stats.conflict || 0);
+  /* 只有拿到真实计划（ready=true）才算扫描结束；占位渲染不动 pending，
+     这样 doPlan 不必在 renderPlan 前后反复写 planPending。 */
+  if (ready) state.planPending = false;
+  state.planPage = 0;
+  state.planTotal = p.total || 0;
+  state.planMessage = p.message || "";
+  const n = planCount();
+  const bad = planBad();
   $("planTag").textContent = "待处理 " + n + (bad ? " ｜ 错/冲突 " + bad : "");
-  $("planText").textContent = "计划：" + (p.total || 0) + " 项 ｜ 待处理 " + n;
-  $("planDot").classList.toggle("off", !p.total);
-  $("btnApply").disabled = !n || !ready;
+  $("planText").textContent = "计划：" + state.planTotal + " 项 ｜ 待处理 " + n;
+  $("planDot").classList.toggle("off", !state.planTotal);
   syncPlanControls();
+  const host = $("planTbl");
   if (!state.items.length) {
-    $("planTbl").innerHTML = "<div class='empty'>（" + (p.message || "没有文件") + "）</div>";
+    host.innerHTML = "<div class='empty'>（" + esc(p.message || "没有文件") + "）</div>";
     return;
   }
-  $("planTbl").innerHTML = "<table><thead><tr>" +
+  host.innerHTML = "<table><thead><tr>" +
     "<th style='width:64px'>状态</th><th style='width:56px'>目标</th><th style='width:190px'>原路径</th>" +
     "<th>目标路径</th><th style='width:150px'>说明</th><th style='width:56px'></th>" +
-    "</tr></thead><tbody>" +
-    state.items.map((it, i) => {
-      const cls = it.status === "error" || it.status === "conflict" ? "err"
-        : it.status === "excluded" || it.status === "skip" ? "dim" : "ok";
-      const short = (s) => {
-        const normalized = s.replaceAll('\\','/'), root = $("runRoot").value.trim().replaceAll('\\','/').replace(/\/$/,'');
-        return esc(root && normalized.toLowerCase().startsWith(root.toLowerCase()+'/') ? normalized.slice(root.length+1) : normalized);
-      };
-      return "<tr class='" + cls + "'><td data-i18n-ui>" + (STATUS_LABEL[it.status] || it.status) + "</td>" +
-        "<td>" + esc(it.target || "") + "</td>" +
-        "<td title=\"" + esc(it.src) + "\">" + short(it.src) + "</td>" +
-        "<td title=\"" + esc(it.dst) + "\">" + (it.changed_ !== false ? short(it.dst) : "—") + "</td>" +
-        "<td style='font-size:11px;color:var(--dim)'>" + esc(it.note || "") + "</td>" +
-        "<td>" + (it.status === "error" ? "<button class='btn ghost sm' data-man='" + i + "'>手动</button>" : "") + "</td></tr>";
-    }).join("") + "</tbody></table>";
-  $("planTbl").querySelectorAll("[data-man]").forEach((b) => {
-    b.onclick = () => openManual(+b.dataset.man);
-  });
+    "</tr></thead><tbody></tbody></table>";
+  appendPlanRows(host, 0, Math.min(state.items.length, PLAN_PAGE_SIZE), makeShortener());
+  updatePlanMore(host);
+  host.onclick = (event) => {
+    const btn = event.target.closest("[data-man]");
+    if (btn) openManual(+btn.dataset.man);
+  };
 }
 function openManual(i) {
   const it = state.items[i];
@@ -368,7 +516,7 @@ async function manualOk() {
   if (!it || !api()) return;
   try {
     const params = runParams(state.planMode);
-    const r = await api().manual_replan({
+    const r = await callApi("manual_replan", {
       path: it.src, ep: $("manEp").value.trim(),
       target: $("manTarget").value.trim(), info: $("manInfo").value.trim(),
       template: params.template, fields: params.fields,
@@ -391,23 +539,33 @@ function recomputeStats(items) {
 async function doApply() {
   if (!api()) { log("演示态：执行需在壳内运行", "info"); return; }
   if (state.busy) { log("已有任务在进行中", "err"); return; }
-  if (state.planParams !== JSON.stringify(runParams(state.planMode))) { log("选项已改变，请重新生成计划", "err"); $("btnApply").disabled = true; return; }
+  if (state.planParams !== JSON.stringify(runParams(state.planMode))) {
+    log("选项已改变，请重新生成计划", "err");
+    syncPlanControls();
+    return;
+  }
   const todo = state.items.filter((i) => i.status === "" &&
     (state.planMode !== "master-only" || String(i.target || "").toUpperCase() === "MIX"));
   if (!todo.length) { log("没有「待改名」的文件", "err"); return; }
-  const bad = (state.stats.error || 0) + (state.stats.conflict || 0);
+  const bad = planBad();
   const operation = state.planMode === "master-only"
     ? "即将仅重命名 " + todo.length + " 个 Master 文件，不会移动或打包其他文件。"
     : "即将重命名/移动 " + todo.length + " 个文件。";
-  if (!confirm(operation + "\n\n" +
+  const confirmed = await confirmModal({
+    title: state.planMode === "master-only" ? "确认执行 Master 改名" : "确认执行重命名",
+    body: operation + "\n" +
       "· 会生成回溯日志 rename_log_*.csv，可随时撤销\n" +
       "· 如有同名文件将按计划跳过（不会覆盖）" +
-      (bad ? "\n\n注意：另有 " + bad + " 个文件因识别失败或冲突将被跳过" : "") +
-      "\n\n是否继续？")) return;
+      (bad ? "\n注意：另有 " + bad + " 个文件因识别失败或冲突将被跳过" : ""),
+    okText: "开始执行",
+    cancelText: "再想想",
+    danger: !!bad,
+  });
+  if (!confirmed) { log("已取消执行", "info"); return; }
   try {
     state.planApplying = true;
     syncPlanControls();
-    const r = await api().apply(todo, $("runRoot").value.trim());
+    const r = await callApi("apply", todo, $("runRoot").value.trim());
     if (!r.ok) { state.planApplying = false; syncPlanControls(); }
     log(r.ok ? "✓ " + r.message : "✗ " + r.message, r.ok ? "ok" : "err");
   } catch (e) { state.planApplying = false; syncPlanControls(); log("执行异常：" + e, "err"); }
@@ -418,14 +576,24 @@ function onApplied(v) {
   if (v.emptied && v.emptied.length) log("提示：" + v.emptied.length + " 个源集目录已空（只报告不删除）", "info");
   state.refreshAfterApply = true;
 }
-function cancelPlan() {
-  if (state.busy || state.planPending || state.planApplying) return;
+async function cancelPlan() {
+  if (state.planApplying) { log("正在执行重命名，无法中止；完成后可用改名记录撤销", "err"); return; }
+  if (state.planPending) {
+    /* 扫描中：真打断后台线程，不是只清本地状态 */
+    const r = await callApi("cancel_task");
+    if (r.ok) log("■ 已请求中止扫描，等待后台在检查点退出", "info");
+    else log("中止失败：" + (r.message || "未知原因"), "err");
+    return;
+  }
+  if (state.busy) { log("有其他任务在运行，请等待完成", "err"); return; }
   state.planReady = false;
   state.planParams = null;
   state.items = [];
   state.stats = {};
+  state.ignorePlanEvent = true;
   $("manualBox").style.display = "none";
   renderPlan({ items: [], total: 0, stats: {}, message: "本次计划已取消" }, false);
+  log("已取消本次计划（未改动任何文件）", "info");
 }
 
 /* ══════════ 页 4：回溯与撤销 ══════════ */
@@ -459,9 +627,8 @@ async function listLogs(kind) {
 async function previewSel() {
   if (!state.logSel || !api()) return;
   try {
-    const r = state.logSel.kind === "audit"
-      ? await api().preview_log(state.logSel.path)
-      : await api().preview_log(state.logSel.path);
+    /* CSV 回溯日志与 JSON 审计共用同一个预览入口（原来两分支写法相同，属死代码） */
+    const r = await callApi("preview_log", state.logSel.path);
     if (!r.ok) { log("✗ " + r.message, "err"); return; }
     $("logPreview").innerHTML =
       "<table><thead><tr><th style='width:50%'>原文件</th><th>新文件</th></tr></thead><tbody>" +
@@ -473,10 +640,16 @@ async function previewSel() {
 }
 async function undoSel(dry) {
   if (!state.logSel || !api()) return;
-  if (!dry && !confirm("将按该文件倒序把「新文件」改回「原文件」。\n确认执行撤销？")) return;
+  if (!dry) {
+    const confirmed = await confirmModal({
+      title: "确认执行撤销",
+      body: "将按该文件倒序把「新文件」改回「原文件」。\n撤销会按日志逐条回退，遇冲突的行会跳过并记在日志。",
+      okText: "执行撤销", cancelText: "取消", danger: true,
+    });
+    if (!confirmed) return;
+  }
   try {
-    const fn = state.logSel.kind === "audit" ? api().undo_audit : api().undo_log;
-    const r = await fn(state.logSel.path, !!dry);
+    const r = await callApi(state.logSel.kind === "audit" ? "undo_audit" : "undo_log", state.logSel.path, !!dry);
     log(r.ok ? "✓ " + r.message : "✗ " + r.message, r.ok ? "ok" : "err");
   } catch (e) { log("撤销异常：" + e, "err"); }
 }
@@ -519,7 +692,7 @@ async function ftPlan(silent) {
   await window.ToolPrefs.flush();
   if (!api()) { $("ftPreview").textContent = "（演示态：预览需在壳内运行）"; return; }
   try {
-    const r = await api().ft_plan(ftParams());
+    const r = await callApi("ft_plan", ftParams());
     if (!r.ok) { $("ftPreview").textContent = r.preview || r.message || "规划失败"; $("ftExample").textContent = "未生成建立计划"; if (!silent) log("✗ " + (r.message || "规划失败"), "err"); return; }
     $("ftPreview").textContent = r.preview;
     $("ftExample").textContent = "示例：" + r.example + "（" + r.steps + " 步）";
@@ -530,7 +703,7 @@ async function ftPrecheck() {
   if (!validFolderFormats()) return;
   if (!api()) { log("演示态：预检需在壳内运行", "info"); return; }
   try {
-    const r = await api().ft_precheck(ftParams());
+    const r = await callApi("ft_precheck", ftParams());
     const probs = r.problems || [];
     log(probs.length ? "⚠ 预检发现 " + probs.length + " 个问题：\n· " + probs.join("\n· ")
                      : "✓ 预检通过，无问题", probs.length ? "err" : "ok");
@@ -543,9 +716,15 @@ async function ftBuild() {
   if (state.busy) { log("已有任务在进行中", "err"); return; }
   const p = ftParams();
   if (!p.output_root) { log("请先选输出根目录", "err"); return; }
-  if (!confirm("将在以下位置建立目录/文件：\n" + p.output_root + "\n\n是否继续？")) return;
+  const confirmed = await confirmModal({
+    title: "确认新建工程目录",
+    body: "将在以下位置建立目录/文件：\n" + p.output_root +
+      "\n· 已存在的目录会按「跳过已存在」开关处理，不会覆盖已有工程",
+    okText: "开始建立", cancelText: "取消",
+  });
+  if (!confirmed) { log("已取消建立", "info"); return; }
   try {
-    const r = await api().ft_build(p);
+    const r = await callApi("ft_build", p);
     log(r.ok ? "✓ " + r.message : "✗ " + r.message, r.ok ? "ok" : "err");
   } catch (e) { log("建立异常：" + e, "err"); }
 }
@@ -555,7 +734,7 @@ async function ftInfer() {
   const out = $("ftOutRoot").value.trim();
   if (!out) { log("先填输出根目录", "err"); return; }
   try {
-    const r = await api().ft_infer(out);
+    const r = await callApi("ft_infer", out);
     if (!r.ok) { log("✗ " + r.message, "err"); return; }
     const f = r.fields || {};
     if (f.name) $("ftName").value = f.name;
@@ -571,7 +750,7 @@ async function ftInfer() {
 async function loadAll() {
   if (!api()) return;
   try {
-    const r = await api().get_config();
+    const r = await callApi("get_config");
     if (r.ok) {
       state.cfg = r.cfg;
       state.defaults = r.defaults;
@@ -590,7 +769,7 @@ async function loadAll() {
       $("runRenameSubtracks").checked = r.cfg.rename_subtracks !== false;
       $("runDirFormat").value = r.cfg.ep_dir_template || "{集数}";
     }
-    const f = await api().ft_form();
+    const f = await callApi("ft_form");
     if (f.ok) fillFt(f.form, f);
   } catch (e) { log("配置加载失败：" + e, "err"); }
 }
@@ -613,11 +792,12 @@ async function init() {
     $("tplNewName").value = ""; $("tplNewBody").value = "";
     renderTplTbl(); log("已加模板（记得保存）：" + name, "info");
   };
-  $("btnTplReset").onclick = () => {
-    if (!confirm("模板库恢复出厂（当前修改丢弃）？")) return;
+  $("btnTplReset").onclick = async () => {
+    if (!(await confirmModal({ title: "模板库恢复出厂", body: "当前修改会丢弃，恢复为内置模板。", okText: "恢复", danger: true }))) return;
     state.cfg.templates = JSON.parse(JSON.stringify((state.defaults || {}).templates ||
       [{ name: "全格式", tpl: "{片名} {集数}集 {日期} {版本} {用户}_{轨道信息}" }]));
     renderTplTbl();
+    log("模板库已恢复出厂（记得保存）", "info");
   };
   /* 页2 */
   $("btnTgtAdd").onclick = () => {
@@ -627,12 +807,13 @@ async function init() {
   };
   $("btnTgtAllOn").onclick = () => { state.cfg.targets.forEach((t) => { t.enabled = true; }); renderTgtTbl(); };
   $("btnTgtAllOff").onclick = () => { state.cfg.targets.forEach((t) => { t.enabled = false; }); renderTgtTbl(); };
-  $("btnTgtReset").onclick = () => {
-    if (!confirm("目标表恢复出厂（当前修改丢弃）？")) return;
+  $("btnTgtReset").onclick = async () => {
+    if (!(await confirmModal({ title: "目标表恢复出厂", body: "当前修改会丢弃，恢复为内置目标表。", okText: "恢复", danger: true }))) return;
     state.cfg.targets = JSON.parse(JSON.stringify((state.defaults || {}).targets ||
       [{ name: "MIX", dir: "", enabled: true }, { name: "BUS", dir: "BUS", enabled: true },
        { name: "STEM", dir: "STEM", enabled: true }, { name: "AIFX", dir: "STEM", enabled: true }]));
     renderTgtTbl();
+    log("目标表已恢复出厂（记得保存）", "info");
   };
   $("btnTgtSave").onclick = saveTargets;
   /* 页3 */
@@ -734,21 +915,30 @@ function updateNamingSamples() {
   $("ftFileSummary").textContent=selected ? window.ToolI18n.sourceText(selected) : "—";
   $("runDirFormat").disabled=!$("runRenameDirs").checked;
   document.querySelectorAll("#runGroupDetails [data-field]").forEach(button=>{button.disabled=!$("runRenameDirs").checked;});
-  $("btnApply").disabled=!(state.stats.rename ?? state.stats[""] ?? 0);
+  /* 执行按钮不在这里判断：统一由 syncPlanControls 依据 busy/planReady 裁决 */
+  syncPlanControls();
 }
 let namingBound=false;
+/* 示例预览合并刷新：20+ 个输入框同时绑事件，逐键同步执行会卡输入法。
+   60ms 内的连续事件合成一次（同一帧内多次改动只算一次）。 */
+let samplesTimer = 0;
+function scheduleSamples() {
+  if (samplesTimer) return;
+  samplesTimer = setTimeout(() => { samplesTimer = 0; updateNamingSamples(); }, 60);
+}
 function initNamingFormats() {
   if(namingBound){syncFormats();updateNamingSamples();return;} namingBound=true;
   formatPairs.forEach(([main,copy]) => {
-    for(const [from,to] of [[main,copy],[copy,main]]) ["input","change"].forEach(event => $(from).addEventListener(event,()=>{ $(to).value=$(from).value;window.ToolPrefs.touch(to);updateNamingSamples(); }));
+    /* 双向同步只绑 input：change 在 input 之后必然再触发一次，等于同一改动跑两遍 */
+    for(const [from,to] of [[main,copy],[copy,main]]) $(from).addEventListener("input",()=>{ $(to).value=$(from).value;window.ToolPrefs.touch(to);scheduleSamples(); });
   });
   document.querySelectorAll('[data-insert]').forEach(group=>{
     group.innerHTML=group.dataset.fields.split(',').map(field=>'<button type="button" class="btn ghost sm" data-field="'+field+'">'+field+'</button>').join('');
     group.querySelectorAll('button').forEach(btn=>btn.onclick=()=>{const input=$(group.dataset.insert);input.focus();input.setRangeText('{'+btn.dataset.field+'}',input.selectionStart,input.selectionEnd,'end');input.dispatchEvent(new Event('input',{bubbles:true}));});
   });
   document.querySelectorAll('[data-ep-format]').forEach(btn=>btn.onclick=()=>{$('ftEpFormat').value=btn.dataset.epFormat;$('ftEpFormat').dispatchEvent(new Event('input',{bubbles:true}));});
-  ["runExts","runRecursive","runMtime","ftTplRoot","ftPtx","ftName","ftLevel","ftDate","ftUser","ftEps","ftEpPadding","ftEpFormat","ftProjectFormat","runDirFormat","runRenameDirs","runRenameFiles","tplGlobal","fProject","fDate","fVer","fUser"].forEach(id=>$(id).addEventListener('input',updateNamingSamples));
-  ['ftEpPadding','ftPtx'].forEach(id=>$(id).addEventListener('change',updateNamingSamples));
+  ["runExts","runRecursive","runMtime","ftTplRoot","ftPtx","ftName","ftLevel","ftDate","ftUser","ftEps","ftEpPadding","ftEpFormat","ftProjectFormat","runDirFormat","runRenameDirs","runRenameFiles","tplGlobal","fProject","fDate","fVer","fUser"].forEach(id=>$(id).addEventListener('input',scheduleSamples));
+  ['ftEpPadding','ftPtx'].forEach(id=>$(id).addEventListener('change',scheduleSamples));
   ['runRenameDirs','runRenameFiles','runGroupMaster','runRenameSubtracks'].forEach(id=>$(id).addEventListener('change',()=>{state.items=[];state.stats={};renderPlan({items:[],message:'选项已改变，请重新生成计划'});updateNamingSamples();}));
   $('editFileFormat').onclick=()=>goto('rule');
   syncFormats();updateNamingSamples();
@@ -758,7 +948,8 @@ function initNamingFormats() {
 let currentAppVersion = "";
 function showAppVersion() {
   if (!currentAppVersion) return;
-  document.querySelector('.ver').textContent = 'v' + currentAppVersion;
+  const el = document.getElementById('statusVersion');
+  if (el) el.textContent = '统一命名归位 | v' + currentAppVersion;
   document.title = window.ToolI18n.translate('Rename Project') + ' v' + currentAppVersion;
 }
 fetch('app-versions.json', {cache:'no-store'}).then(r => {

@@ -19,6 +19,13 @@ V4_DIR = os.path.dirname(HERE)
 if V4_DIR not in sys.path:
     sys.path.insert(0, V4_DIR)
 
+"""参数目录：Rename Project 的界面记忆与配置都落在 Syncthing 同步盘，
+两机共用同一套参数，且换包/换版本不受影响（必须在导入 ptools 之前设好）。"""
+SHARED_ROOT = r"D:\Ai-Files\.config\RenameProject"
+if os.path.isdir(os.path.dirname(os.path.dirname(SHARED_ROOT))):
+    os.environ.setdefault("PT_APP_DIR", SHARED_ROOT)
+    os.environ.setdefault("PT_H_PREFS_ROOT", SHARED_ROOT)
+
 from shell.httpd import make_server, WEB_DIR  # noqa: E402
 from api.re_api import ReApi  # noqa: E402
 
@@ -46,7 +53,7 @@ def run_pywebview(port: int) -> None:
     remember_window(win, api._h_preferences)
     from shell.re_folder_drop import bind_project_drop
     win.events.loaded += lambda: bind_project_drop(win)
-    webview.start(icon=os.path.join(WEB_DIR,'assets','logos','r.ico'))
+    webview.start(icon=os.path.join(WEB_DIR,'assets','icons','re','app.ico'))
 
 
 def run_edge(port: int) -> None:

@@ -55,6 +55,9 @@ DEFAULT_DELIVERY_ROOT = _home_default("My-Temporary", "Backup-Deliver",
 # 首次运行时若 exe 旁还没有 config.json，会把旧 %APPDATA% 的一份**复制**过来
 # （迁移不删旧文件，见 config.migrate_legacy_config）。
 def _app_dir():
+    override = os.environ.get("PT_APP_DIR")
+    if override:
+        return override
     if getattr(sys, "frozen", False):
         return os.path.dirname(os.path.abspath(sys.executable))
     # settings.py 位于 <pt-tools>/ptools/core/ 下，向上三级 = src/pt-tools

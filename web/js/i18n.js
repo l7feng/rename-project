@@ -5,7 +5,7 @@
  let language='zh-CN',scheduled=false;
  const originals=new WeakMap(),attrs=new WeakMap();
  const chinese=/[\u3400-\u9fff]/;
- const prefixes={'模板根: ':'Template root: ','工程文件模板: ':'Project file template: ','选择失败：':'Selection failed: ','扫描异常：':'Scan error: ','执行异常：':'Execution error: ','预览异常：':'Preview error: ','撤销异常：':'Undo error: ','建立异常：':'Folder creation error: ','规划异常：':'Planning error: ','预检异常：':'Preflight error: ','提取异常：':'Import settings error: ','配置加载失败：':'Configuration load failed: ','配置保存失败：':'Configuration save failed: ','记忆失败：':'Settings save failed: ','记忆读取失败：':'Settings read failed: ','已加模板（记得保存）：':'Template added (save to apply): ','回溯日志：':'Recovery log: ','重算异常：':'Recalculation error: ','预演异常：':'Preview error: ','导入异常：':'Import error: ','解析异常：':'Parsing error: ','导出异常：':'Export error: ','自检异常：':'Environment check error: ','分离异常：':'Separation error: ','示例：':'Example: '};
+ const prefixes={'模板根: ':'Template root: ','工程文件模板: ':'Project file template: ','选择失败：':'Selection failed: ','扫描异常：':'Scan error: ','执行异常：':'Execution error: ','预览异常：':'Preview error: ','撤销异常：':'Undo error: ','建立异常：':'Folder creation error: ','规划异常：':'Planning error: ','预检异常：':'Preflight error: ','提取异常：':'Import settings error: ','配置加载失败：':'Configuration load failed: ','配置保存失败：':'Configuration save failed: ','记忆失败：':'Settings save failed: ','记忆读取失败：':'Settings read failed: ','已加模板（记得保存）：':'Template added (save to apply): ','回溯日志：':'Recovery log: ','重算异常：':'Recalculation error: ','预演异常：':'Preview error: ','导入异常：':'Import error: ','解析异常：':'Parsing error: ','导出异常':'Export error: ','自检异常：':'Environment check error: ','分离异常：':'Separation error: ','示例：':'Example: ','中止失败：':'Cancel failed: ','桥接缺少方法：':'Bridge method missing: ','调用失败（':'Call failed ('};
  function english(raw){
   const text=String(raw),trim=text.trim();if(!trim)return text;
   let translated=dictionary[trim];
@@ -36,6 +36,21 @@
    else if(/^项目名（/.test(trim))translated=trim.replace('项目名（','Project name (').replace('待补','required').replace('）',')');
    else if(trim.startsWith('模型环境：'))translated=trim.replace('模型环境：','Model environment: ').replace('未就绪','not ready').replace('可用','ready');
    else if(trim.startsWith('项目根: '))translated=trim.replace('项目根: ','Project root: ');
+   else if(/^扫描目录 /.test(trim))translated=trim.replace('扫描目录 ','Scanning ').replace(' …','…');
+   else if(/^扫描 [\s\S]+：\d+ 个文件，生成计划中…$/.test(trim))translated=trim.replace(/^扫描 ([\s\S]+)：(\d+) 个文件，生成计划中…$/,'Scanning $1: $2 files, generating plan…');
+   else if(/^计划完成：待处理/.test(trim)){
+    translated=trim.replace('计划完成：待处理','Plan ready: pending').replace('跳过','skipped').replace('错误','errors').replace('冲突','conflicts').replace('排除','excluded').replace(/｜/g,'|');
+   }
+   else if(/^已中止：/.test(trim))translated=trim.replace('已中止：','Stopped: ');
+   else if(/^计划生成已中止/.test(trim))translated=trim.replace('计划生成已中止（已处理','Plan cancelled (processed').replace(' 个文件）',' files)').replace(/ \/ /g,' of ');
+   else if(/^已请求中止/.test(trim))translated=trim.replace('已请求中止，等待任务在检查点退出…','Stop requested; waiting for the task to exit at its checkpoint…');
+   else if(/^■ 已请求中止扫描/.test(trim))translated=trim.replace('■ 已请求中止扫描，等待后台在检查点退出','■ Stop requested; waiting for the background task to exit');
+   else if(/^已取消本次计划/.test(trim))translated=trim.replace('已取消本次计划（未改动任何文件）','Plan cancelled (no files were changed)').replace('已取消本次计划','Plan cancelled');
+   else if(/^已取消执行/.test(trim))translated=trim.replace('已取消执行','Apply cancelled');
+   else if(/^已取消建立/.test(trim))translated=trim.replace('已取消建立','Creation cancelled');
+   else if(/^调用失败（[\s\S]+）：[\s\S]*$/.test(trim))translated=trim.replace(/^调用失败（([\s\S]+)）：([\s\S]*)$/,'Call failed ($1): $2');
+   else if(/^桥接缺少方法：/.test(trim))translated=trim.replace('桥接缺少方法：','Bridge method missing: ');
+   else if(/^中止失败：/.test(trim))translated=trim.replace('中止失败：','Cancel failed: ').replace('当前没有运行中的任务','no task is running').replace('该任务不支持中止（改名执行请等完成后用改名记录撤销）','this task cannot be stopped (wait for it to finish, then use Rename History)');
    else{for(const [source,target] of Object.entries(prefixes)){if(trim.startsWith(source)){translated=target+english(trim.slice(source.length));break;}}}
   }
   if(translated===undefined&&trim.includes('\n')){const result=trim.split('\n').map(english).join('\n');if(result!==trim)translated=result;}
@@ -69,8 +84,8 @@
   }
   document.documentElement.lang=language;document.documentElement.dataset.language=language;
   const tool=location.pathname.endsWith('re.html')?'re':location.pathname.endsWith('jy.html')?'jy':'pt';
-  const names={pt:['Pro Tools 工具箱','Pro Tools Toolkit'],jy:['JY Tools','JY Tools'],re:['Rename Project','Rename Project']};
-  document.title=names[tool][language==='en'?1:0]+' H v4.2.1';
+  const names={pt:['Pro Tools 工具箱','Pro Tools Toolkit'],jy:['剪映工程工具','JY Tools'],re:['统一命名归位','Rename Project']};
+  document.title=names[tool][language==='en'?1:0];
  }
  const pending=new Set();
  function updateSubtree(root){

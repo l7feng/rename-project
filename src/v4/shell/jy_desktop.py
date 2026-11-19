@@ -48,7 +48,7 @@ def run_pywebview(port: int) -> None:
         TITLE, url, js_api=api,
         **window_options(api._h_preferences))
     remember_window(win, api._h_preferences)
-    webview.start(icon=os.path.join(WEB_DIR,'assets','logos','j.ico'))
+    webview.start(icon=os.path.join(WEB_DIR,'assets','icons','jy','app.ico'))
 
 
 def run_edge(port: int) -> None:

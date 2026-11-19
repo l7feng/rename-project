@@ -1,5 +1,5 @@
 /* Apple-inspired desktop hierarchy; scoped to Rename Project only. */
-.re-apple-ui{--re-canvas:#1c1c1e;--re-panel:#262629;--re-field:#1c1c1e;--re-line:#424247;--re-fg:#f5f5f7;--re-muted:#b2b2ba;--re-primary:#0067cf;--re-primary-hover:#005ab8;--re-soft:#323238;--re-radius:var(--material-radius);--re-control-radius:calc(var(--material-radius) * .65);--re-inner-radius:calc(var(--material-radius) * .5);background:var(--re-canvas);color:var(--re-fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;--fg:var(--re-fg);--dim:var(--re-muted);--faint:var(--re-muted)}
+.re-apple-ui{--re-canvas:#0d1015;--re-panel:#14181f;--re-field:#1a1f28;--re-line:#242a34;--re-fg:#dfe6f0;--re-muted:#97a3b6;--re-primary:#0067cf;--re-primary-hover:#005ab8;--re-soft:#20262f;--re-radius:var(--material-radius);--re-control-radius:calc(var(--material-radius) * .65);--re-inner-radius:calc(var(--material-radius) * .5);background:var(--re-canvas);color:var(--re-fg);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px;--fg:var(--re-fg);--dim:var(--re-muted);--faint:var(--re-muted)}
 html[data-mode="claude"] .re-apple-ui{--re-canvas:#f5f5f7;--re-panel:#ffffff;--re-field:#f5f5f7;--re-line:#d2d2d7;--re-fg:#1d1d1f;--re-muted:#61616a;--re-soft:#e9e9ed}
 html[data-mode="warm"] .re-apple-ui{--re-canvas:#211e1c;--re-panel:#2c2724;--re-field:#211e1c;--re-line:#514840;--re-fg:#f4ebe3;--re-muted:#c1b2a5;--re-soft:#3a322d}
 html[data-mode="ocean"] .re-apple-ui{--re-canvas:#1b222b;--re-panel:#252e3a;--re-field:#1b222b;--re-line:#455366;--re-fg:#edf4fb;--re-muted:#afbed0;--re-soft:#303c4b}
@@ -75,3 +75,12 @@ html[data-mode="ocean"] .re-apple-ui{--re-canvas:#1b222b;--re-panel:#252e3a;--re
 .re-apple-ui .fmt-wrap{position:relative;flex:1;min-width:0;display:flex}
 .re-apple-ui .fmt-wrap input[type=text]{width:100%;padding-right:110px}
 .re-apple-ui .fmt-preview{position:absolute;right:16px;top:50%;transform:translateY(-50%);max-width:52%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none;font-size:12px;color:var(--re-muted);opacity:.8}
+
+/* ── 应用内确认模态：替代原生 confirm（原生弹窗会跳出玻璃视觉，且中文被系统按钮截断） ── */
+.re-modal-mask{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(6,9,14,.52);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.re-modal{width:min(520px,92vw);max-height:80vh;display:flex;flex-direction:column;padding:18px 20px 16px;background:var(--surface,var(--re-panel));color:var(--fg,var(--re-fg));border:1px solid var(--border,var(--re-line));border-radius:var(--radius,16px);box-shadow:0 24px 80px rgba(0,0,0,.42)}
+.re-modal h3{margin:0 0 10px;font-size:15px;font-weight:600;letter-spacing:.2px}
+.re-modal-body{overflow:auto;font-size:13px;line-height:1.75}
+.re-modal-body p{margin:0 0 8px}
+.re-modal-body p:last-child{margin-bottom:0}
+.re-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}

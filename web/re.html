@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rename Project — v4 HTML</title>
-<link rel="icon" href="assets/logos/r.ico">
+<title>统一命名归位</title>
+<link rel="icon" href="assets/icons/re/app.ico">
 <link rel="stylesheet" href="assets/style.css">
 <link rel="stylesheet" href="assets/rename-apple.css">
 <link rel="stylesheet" href="assets/ui-refine.css">
@@ -14,15 +14,14 @@
 
 <!-- ① 头部：与 pt/剪映 壳同款 54px hero -->
 <header class="hero">
-  <img class="logo brand-mark" src="assets/logos/r.png" alt="R">
-  <h1>Rename Project</h1><span class="ver">版本</span>
+  <img class="logo brand-mark" src="assets/branding/brand.png" alt="Rename Project">
   <div class="spacer"></div>
   
   <button type="button" class="mode-sw" id="modeSw" title="切换主题">主题 · <span id="modeLabel">中性灰（深）</span></button>
 </header>
 
 <!-- ② 页签行 -->
-<nav class="tabs naming-nav" aria-label="工具导航"><button type="button" class="tab on" id="tab-run"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4 12 8-12 8z"/></svg>批量分组改名</button><button type="button" class="tab" id="tab-folder"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2-3h9v16H3zM12 10v7m-4-3.5h8"/></svg>新建工程目录</button><span class="nav-gap" aria-hidden="true"></span><button type="button" class="tab auxiliary" id="tab-rule"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v4H8zM8 14h8M8 18h6"/><path d="M8 5H5v16h14V5h-3"/></svg>命名设置</button><button type="button" class="tab auxiliary" id="tab-target"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2-3h9v16H3zM8 13h8m-3-3 3 3-3 3"/></svg>分类与去向</button><button type="button" class="tab auxiliary" id="tab-undo"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 5-5m-5 5 5 5M3 10h11a6 6 0 1 1 0 12"/></svg>改名记录</button></nav>
+<nav class="tabs naming-nav" aria-label="工具导航"><button type="button" class="tab on" id="tab-folder"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2-3h9v16H3zM12 10v7m-4-3.5h8"/></svg>新建工程目录</button><button type="button" class="tab" id="tab-run"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 4 12 8-12 8z"/></svg>批量分组改名</button><span class="nav-gap" aria-hidden="true"></span><button type="button" class="tab auxiliary" id="tab-rule"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v4H8zM8 14h8M8 18h6"/><path d="M8 5H5v16h14V5h-3"/></svg>命名设置</button><button type="button" class="tab auxiliary" id="tab-target"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2-3h9v16H3zM8 13h8m-3-3 3 3-3 3"/></svg>分类与去向</button><button type="button" class="tab auxiliary" id="tab-undo"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 5-5m-5 5 5 5M3 10h11a6 6 0 1 1 0 12"/></svg>改名记录</button></nav>
 
 <main>
   <!-- ══════════ 页 1：项目命名规则 ══════════ -->
@@ -76,7 +75,7 @@
   </section>
 
   <!-- ══════════ 页 3：批量分组改名 ══════════ -->
-  <section class="page on" id="page-run">
+  <section class="page" id="page-run">
     <div class="action-toolbar" role="group" aria-label="批量分组改名操作">
       <div class="action-buttons">
         <fieldset class="plan-mode" aria-label="选择计划模式">
@@ -180,7 +179,7 @@
   </section>
 
   <!-- ══════════ 页 5：新建工程目录 ══════════ -->
-  <section class="page" id="page-folder">
+  <section class="page on" id="page-folder">
     <div class="action-toolbar" role="group" aria-label="新建工程目录操作">
       <div class="action-buttons">
           <button class="btn ghost sm" id="btnFtInfer">从上次项目提取</button>
@@ -241,6 +240,42 @@
         <h2>目录树预览 <span class="tag" id="ftExample">规划中</span></h2>
         <pre id="ftPreview" class="inner" style="font-size:11.5px;max-height:440px;overflow:auto;white-space:pre">（点「刷新预览」）</pre>
       </section>
+      <!-- 右侧信息栏：只回答「建多少 / 能不能建 / 建到哪」，数字全部由 ui-refine.js 写入 -->
+      <section class="card px-hl rail-info" id="railInfo" aria-label="建立信息">
+        <div class="rib">
+          <span class="t">本次建立</span>
+          <div class="big"><b id="railSteps">—</b><span id="railUnit"></span></div>
+          <div class="rows">
+            <div><span>分类目录</span><b id="railCats">—</b></div>
+            <div><span>集数文件夹</span><b id="railEps">—</b></div>
+            <div><span>工程文件（ptx）</span><b id="railPtx">—</b></div>
+            <div class="sum"><span id="railExpr">—</span><b id="railTotal">= —</b></div>
+          </div>
+        </div>
+        <div class="rib">
+          <span class="t">预检</span>
+          <div class="pv"><span class="pvst" id="railPrecheck">未预检 · 冲突未确认</span></div>
+          <div class="rnote">结论来自工具栏「预检」</div>
+        </div>
+        <div class="rib">
+          <span class="t">输出规则</span>
+          <div class="rows">
+            <div><span>输出</span><b id="railOutRule">—</b></div>
+            <div><span>已存在</span><b id="railExistRule">—</b></div>
+            <div><span>集数</span><b id="railEpsRule">—</b></div>
+          </div>
+        </div>
+        <div class="rib">
+          <span class="t">路径</span>
+          <div class="path"><span class="k">模板根</span><span class="v" id="railTplPath">—</span></div>
+          <div class="path"><span class="k">输出</span><span class="v" id="railOutPath">—</span></div>
+        </div>
+        <div class="rib">
+          <span class="t">分类目录</span>
+          <div class="chips" id="railCatChips"></div>
+          <div class="rnote">建在项目根下 · 各 1 个</div>
+        </div>
+      </section>
     </div>
   </section>
 
@@ -262,6 +297,7 @@
 <footer class="status">
   <span><span class="dot off" id="planDot"></span><span id="planText">尚未生成计划</span></span>
   <div class="spacer"></div>
+  <span class="status-version" id="statusVersion">统一命名归位 | v4.3.9</span>
   <span class="badge" id="envBadge">就绪</span>
 </footer>
 
@@ -276,3 +312,4 @@
 <script src="js/ui-refine.js"></script>
 </body>
 </html>
+

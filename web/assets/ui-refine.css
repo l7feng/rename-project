@@ -278,3 +278,748 @@ body.ui-a .tbl-wrap th{font-weight:600}
 body.ui-a .log{font-size:12px;line-height:1.65}
 body.ui-a .logwrap .loghead b{font-size:11.5px;font-weight:600}
 body.ui-a code{font-size:12px}
+
+/* ═══ B 布局（2026-11-17）：左栏定宽 · 组头图标 · 开关设置卡 · 模式搬进左栏 · 结论条 ═══ */
+
+/* 左栏固定 420px，与「改名记录」页同一标准：表单不被拉宽，右侧预览吃满高度 */
+body.ui-a #page-run .cols{grid-template-columns:420px minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+body.ui-a #page-folder .cols{grid-template-columns:420px minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+
+/* 组头图标取代灰色装饰编号：编号只留给真正的序列（工具栏步骤条） */
+body.ui-a .ui-gico{width:17px;height:17px;border-radius:5px;background:var(--input);display:grid;place-items:center;flex:none}
+body.ui-a .ui-gico svg{width:11px;height:11px;stroke:var(--dim);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+body.ui-a .ui-gidx{display:none!important}
+
+/* 模式分段：搬进左栏顶部，切模式直接决定这一栏露出什么 */
+body.ui-a .ui-modeseg{display:flex;gap:4px;padding:3px;background:var(--input);border:1px solid var(--border);border-radius:999px;flex:none}
+body.ui-a .ui-modeseg .btn{flex:1;justify-content:center;min-height:30px;padding:5px 8px;font-size:12px;border-radius:999px;white-space:nowrap}
+body.ui-a .ui-modehint{font-size:11px!important;line-height:1.5;color:var(--faint)!important;margin:-4px 2px 0!important}
+
+/* 开关设置卡：卡头是开关与状态，卡内是它控制的格式；关闭时整卡降权 */
+body.ui-a .ui-swcard{border:1px solid var(--border);border-radius:11px;background:var(--input);padding:8px 10px 10px;display:flex;flex-direction:column;gap:7px;flex:none}
+body.ui-a .ui-swcard>label.check.ui-switch{margin:0!important}
+body.ui-a .ui-swcard .ui-subfield{border-left:0!important;background:transparent!important;padding:6px 0 0!important;border-radius:0!important}
+body.ui-a .ui-swcard.off{opacity:.72}
+
+/* 结论条：常驻左栏底部，把「将处理多少 / 会建几个 / 有没有冲突」写在一处 */
+body.ui-a .ui-verdict{margin-top:0;flex:none;border:1px solid var(--border);border-radius:12px;background:var(--input);padding:8px 11px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--fg);min-width:0}
+body.ui-a .ui-verdict .ui-vdot{width:7px;height:7px;border-radius:50%;background:var(--faint);flex:none}
+body.ui-a .ui-verdict b{font-weight:600}
+body.ui-a .ui-verdict.ok .ui-vdot{background:var(--green)}
+body.ui-a .ui-verdict.ok b{color:var(--green)}
+body.ui-a .ui-verdict.warn .ui-vdot{background:var(--red)}
+body.ui-a .ui-verdict.warn b{color:var(--red)}
+body.ui-a .ui-verdict .ui-vsub{margin-left:auto;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:56%}
+
+/* 左栏内部：组列表自己滚，结论条常驻卡底，不遮内容 */
+body.ui-a #page-run .cols>.card:first-child,
+body.ui-a #page-folder .cols>.card:first-child{overflow:hidden!important;display:flex!important;flex-direction:column;gap:8px!important}
+body.ui-a .ui-scroll{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin;scrollbar-color:var(--dim) transparent}
+body.ui-a .ui-scroll::-webkit-scrollbar{width:8px}
+body.ui-a .ui-scroll::-webkit-scrollbar-thumb{background:var(--dim);border-radius:999px;border:2px solid transparent;background-clip:padding-box}
+
+@media(max-width:1100px){
+  body.ui-a #page-run .cols,
+  body.ui-a #page-folder .cols{grid-template-columns:minmax(0,1fr)}
+}
+/* ═══ C 布局（2026-11-17）：实机版式对齐提案图 —— 字号 / 间距 / 标签在上 / 小格行 ═══ */
+
+/* 组：一张卡一个组，卡头一行，卡内不再套第二层边框 */
+body.ui-a #page-run .ui-group,
+body.ui-a #page-folder .ui-group{border:1px solid var(--border)!important;border-radius:12px!important;background:var(--surface);margin:0!important;padding:0!important}
+body.ui-a #page-run .ui-group>summary,
+body.ui-a #page-folder .ui-group>summary{padding:10px 12px!important;font-size:12.5px!important;font-weight:600;gap:9px!important;line-height:1.4}
+body.ui-a #page-run .ui-group[open]>summary,
+body.ui-a #page-folder .ui-group[open]>summary{border-bottom:1px solid var(--border)}
+body.ui-a #page-run .ui-group .ui-body,
+body.ui-a #page-folder .ui-group .ui-body{padding:11px 12px 12px!important;gap:10px!important}
+body.ui-a #page-run .ui-group .ui-sum,
+body.ui-a #page-folder .ui-group .ui-sum{font-size:11px!important;color:var(--faint);font-weight:400}
+
+/* 字段一律「标签在上、控件在下」：原先多输入挤一行、第三个框被顶到下一行拉满宽度 */
+body.ui-a #page-run .cols>.card:first-child .field,
+body.ui-a #page-folder .cols>.card:first-child .field{display:block!important;flex-wrap:nowrap!important;gap:0!important;margin:0!important}
+body.ui-a #page-run .cols>.card:first-child .field>label,
+body.ui-a #page-folder .cols>.card:first-child .field>label{display:block!important;width:auto!important;text-align:left!important;font-size:11.5px!important;color:var(--dim)!important;margin:0 0 5px!important;white-space:normal!important;line-height:1.4}
+body.ui-a #page-run .cols>.card:first-child .field>input,
+body.ui-a #page-run .cols>.card:first-child .field>select,
+body.ui-a #page-folder .cols>.card:first-child .field>input,
+body.ui-a #page-folder .cols>.card:first-child .field>select{width:100%!important;height:30px!important;min-height:30px!important;border-radius:8px!important;font-size:12.5px!important;padding:0 9px!important}
+body.ui-a #page-run .cols>.card:first-child .field>button,
+body.ui-a #page-folder .cols>.card:first-child .field>button{height:30px!important;min-height:30px!important;border-radius:8px!important;padding:0 11px!important;font-size:12px!important}
+
+/* 输入行：输入吃满、按钮固定在行尾 */
+body.ui-a .ui-frow{display:flex!important;gap:6px!important;align-items:flex-end;min-width:0}
+body.ui-a .ui-frow>input[type=text]{flex:1 1 0!important;min-width:0}
+body.ui-a .ui-frow>button{flex:none}
+body.ui-a .ui-mini{display:flex!important;flex-direction:column;min-width:0}
+body.ui-a .ui-mini>label{display:block;font-size:11.5px;color:var(--dim);margin:0 0 5px;line-height:1.4}
+body.ui-a .ui-mini>input[type=text]{width:100%!important;height:30px!important;min-height:30px!important;border-radius:8px!important;font-size:12.5px!important;padding:0 9px!important}
+
+/* 开关：行高与说明和图一致 */
+body.ui-a #page-run .cols>.card:first-child label.check.ui-switch,
+body.ui-a #page-folder .cols>.card:first-child label.check.ui-switch{margin:0!important;gap:3px 10px!important}
+body.ui-a #page-run .cols>.card:first-child label.check.ui-switch>span,
+body.ui-a #page-folder .cols>.card:first-child label.check.ui-switch>span{font-size:12.5px}
+body.ui-a #page-run .ui-note,
+body.ui-a #page-folder .ui-note{margin:0 0 0 26px!important;font-size:11.5px!important;line-height:1.55!important}
+
+/* 卡内的格式折叠：标题当小标题使，不做第三条边 */
+body.ui-a .ui-swcard .setting-fold>summary{font-size:11.5px!important;font-weight:600!important;color:var(--fg)!important;padding:0!important;border:0!important;background:transparent!important}
+body.ui-a .ui-swcard .setting-fold[open]>summary{margin-bottom:6px}
+body.ui-a .ui-swcard .field>label{font-size:11px!important;color:var(--faint)!important}
+body.ui-a .ui-swcard .format-fields{gap:5px!important}
+body.ui-a .ui-swcard .format-fields button{font-size:11px!important;padding:2px 9px!important;min-height:0!important;height:auto!important;border-radius:999px!important}
+body.ui-a .ui-swcard .inner{font-size:11.5px!important;color:var(--faint)!important}
+body.ui-a .ui-swcard .inner code{font-size:11.5px;padding:1px 7px;border-radius:6px;background:#10151c;border:1px solid var(--border)}
+
+/* 模式分段与提示 */
+body.ui-a .ui-modeseg{padding:3px!important}
+body.ui-a .ui-modeseg .btn{min-height:30px!important;font-size:12px!important;border-radius:999px!important}
+
+/* 折叠区内部也按 10px 节奏排：字段与开关之间不贴着 */
+body.ui-a .ui-flat-fold{display:flex!important;flex-direction:column;gap:10px!important}
+body.ui-a .ui-flat-fold>summary{display:none!important}
+
+/* 开关栈：容器 gap 决定间距，绕开 label.check 上的 margin:0!important */
+.ui-sws{display:flex;flex-direction:column;gap:9px;margin-top:10px}
+.ui-sws>label.check{margin:0!important}
+
+/* 折叠区里每个开关自带上方气口（不依赖 gap，避免被基础样式覆盖） */
+body.ui-a #page-run details.setting-fold>label.check.ui-switch,
+body.ui-a #page-folder details.setting-fold>label.check.ui-switch{margin-top:10px!important}
+
+/* 相邻开关之间留气口 */
+body.ui-a #page-run .cols>.card:first-child label.check.ui-switch+label.check.ui-switch,
+body.ui-a #page-folder .cols>.card:first-child label.check.ui-switch+label.check.ui-switch{margin-top:8px!important}
+body.ui-a .ui-body>label.check.ui-switch:first-child{margin-top:0!important}
+
+/* 结论条 */
+body.ui-a .ui-verdict{padding:8px 11px!important;border-radius:12px!important}
+/* ═══ 强调色对齐提案图（2026-11-17）：中性灰 #b6bdc9，按下/悬停取更亮一档 ═══
+   实机跑的是 re-apple 主题层，--re-primary 原为 #0067cf（蓝）；提案图用的是 style.css dark 主题的 #b6bdc9。
+   主按钮、tab 选中、开关、聚焦环、分段选中全部走 --accent / --re-primary，改这一处即全域一致。 */
+body.re-apple-ui{
+  --re-primary:#b6bdc9;
+  --re-primary-hover:#c6ccd6;
+  --accent:#b6bdc9;
+  --accent-d:#b6bdc9;
+  --accent-border:#b6bdc9;
+  --blue:#b6bdc9;
+  --btn-primary-fg:#0d1015;
+}
+/* 顶栏对齐提案图：RE 方块 + 版本胶囊 + 选中页签铺满强调色（玻璃主题的渐变/描边会把它吃掉，故 !important） */
+body.ui-a header.hero{gap:10px}
+body.ui-a header.hero .ui-rebadge{flex:none;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);
+  background:linear-gradient(135deg,#2b333f,#181d25);display:grid;place-items:center;font-size:11px;color:var(--dim);letter-spacing:.5px}
+body.ui-a header.hero .ver{margin-left:-4px}
+body.ui-a header.hero nav.tabs .tab.on{background:var(--accent)!important;background-image:none!important;color:var(--btn-primary-fg)!important;
+  border-color:var(--accent)!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;font-weight:600}
+body.ui-a header.hero nav.tabs .tab.auxiliary{font-size:12px;padding:5px 9px}
+/* ═══ C 布局（2026-11-18）：新建工程目录页 · 右侧建立信息栏 ═══
+   左栏与预览卡片结构不动，只在同一行 .cols 里加第三张卡片；
+   窄窗口下右栏退回整行（不隐藏，信息不丢）。 */
+body.ui-a #page-folder .cols{grid-template-columns:420px minmax(0,1fr) 252px}
+@media (max-width:1460px){
+  body.ui-a #page-folder .cols{grid-template-columns:400px minmax(0,1fr) 236px}
+}
+@media (max-width:1240px){
+  /* 不退回单列：应用自身的单列布局会把左卡与预览卡叠在一起（既有缺陷），
+     这里只把两侧收窄，保持三栏不重叠 */
+  body.ui-a #page-folder .cols{grid-template-columns:368px minmax(0,1fr) 226px}
+}
+
+#page-folder .rail-info{display:flex;flex-direction:column;gap:15px;padding:16px 14px!important;overflow:auto;font-size:12px;color:var(--dim)}
+#page-folder .rail-info .rib{min-width:0}
+#page-folder .rail-info .t{display:block;font-size:10.5px;letter-spacing:.5px;color:var(--faint);margin-bottom:3px}
+#page-folder .rail-info .big{font-size:25px;line-height:1.15;font-weight:600;color:var(--fg);letter-spacing:-.6px;font-variant-numeric:tabular-nums}
+#page-folder .rail-info .big span{font-size:10.5px;font-weight:400;color:var(--faint);margin-left:3px;letter-spacing:0}
+#page-folder .rail-info .rows{margin-top:6px;border:1px solid var(--border);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;background:var(--input);font-size:11.5px}
+#page-folder .rail-info .rows>div{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+#page-folder .rail-info .rows span{color:var(--dim);white-space:nowrap}
+#page-folder .rail-info .rows b{color:var(--fg);font-weight:500;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis}
+#page-folder .rail-info .rows .sum{border-top:1px solid var(--border);padding-top:5px;margin-top:1px}
+#page-folder .rail-info .rows .sum span,#page-folder .rail-info .rows .sum b{color:var(--faint);font-weight:400;font-size:11px}
+#page-folder .rail-info .pv{display:flex;align-items:center;gap:8px;min-height:26px}
+#page-folder .rail-info .pvst{font-size:11px;color:#e0b060}
+#page-folder .rail-info .pvst.ok{color:var(--green)}
+#page-folder .rail-info .pvst.bad{color:var(--red)}
+#page-folder .rail-info .rnote{margin-top:7px;font-size:10px;color:var(--faint);line-height:1.45}
+#page-folder .rail-info .path{display:flex;flex-direction:column;gap:2px;margin-bottom:8px;font-size:11.5px;line-height:1.45;word-break:break-all;overflow-wrap:anywhere}
+#page-folder .rail-info .path .k{font-size:10px;color:var(--faint);letter-spacing:.3px}
+#page-folder .rail-info .path .v{color:var(--dim)}
+#page-folder .rail-info .chips{display:flex;flex-wrap:wrap;gap:5px}
+#page-folder .rail-info .chips span{font-size:10.5px;color:var(--dim);background:var(--input);border:1px solid var(--border);border-radius:999px;padding:2px 8px}
+
+/* 树里分类行加粗提亮：只包 span，文字一字不改 */
+#ftPreview .catline{color:var(--fg);font-weight:700}
+
+/* 项目信息卡底部「项目根」实时预览行 */
+.ui-rootlive{margin-top:9px;border:1px solid var(--border);border-radius:10px;background:var(--input);padding:7px 10px 8px;display:flex;flex-direction:column;gap:1px}
+.ui-rootlive>span{font-size:10px;color:var(--faint);letter-spacing:.3px}
+.ui-rootlive>b{font-size:11.5px;font-weight:500;color:var(--fg);word-break:break-all;line-height:1.4}
+
+/* 集数输入格式提示 */
+.ui-fhint{margin-top:5px;font-size:10.5px;color:var(--faint);line-height:1.4}
+
+/* ═══ D（2026-11-18）：说明收进 hover 气泡 · 示例预览浅色 ═══ */
+/* 组头「i」：hover 才出说明，点击不折叠组 */
+.ui-info{width:14px;height:14px;margin-left:6px;border:1px solid var(--border);border-radius:50%;color:var(--faint);font:10px/12px "Segoe UI",sans-serif;font-style:normal;text-align:center;cursor:help;flex:none;display:inline-grid;place-items:center;vertical-align:middle}
+.ui-info:hover{color:var(--fg);border-color:var(--dim);background:var(--input)}
+#uiTip{position:fixed;z-index:99999;max-width:330px;padding:9px 11px;border:1px solid var(--border);border-radius:10px;background:#1b2028;box-shadow:0 12px 30px rgba(0,0,0,.45);color:var(--dim);font-size:11.5px;line-height:1.65;white-space:pre-line;pointer-events:none;display:none}
+#uiTip:empty{display:none}
+
+/* 示例预览：浅色，像占位而不是结果 */
+.ui-tree.ui-demo,#ftPreview.ui-demo{color:var(--faint);opacity:.92}
+#planTbl table.ui-demo td,#planTbl table.ui-demo th{color:var(--faint)}
+#planTbl table.ui-demo td{font-style:normal}
+.ui-demo-note{margin-top:6px;font-size:10.5px;color:var(--faint)}
+
+
+/* 示例态下压掉应用写的「待处理 0」，改由样式给出示例标签（JS 改写会被 renderPlan 覆盖，样式不会） */
+#page-run .card:has(table.ui-demo) #planTag{display:none}
+#page-run .card:has(table.ui-demo) h2::after{content:"示例预览（未生成）";margin-left:8px;font-size:11px;font-weight:400;color:var(--faint);letter-spacing:0}
+
+/* ═══ E（2026-11-19）：命名格式组去嵌套 · 三框留缝 · 快捷填入收一行 ═══ */
+/* 1) 组内不再套三层盒子：折叠标题当小标题，两条之间用一条细线分开 */
+body.ui-a #uiGroupFt3 .ui-body .setting-fold{
+  border:0!important;border-radius:0!important;background:transparent!important;
+  padding:0!important;margin:0!important}
+body.ui-a #uiGroupFt3 .ui-body .setting-fold+.setting-fold{
+  margin-top:10px!important;padding-top:10px!important;border-top:1px solid var(--border)!important}
+body.ui-a #uiGroupFt3 .setting-fold>summary{
+  font-size:12px!important;font-weight:600!important;color:var(--fg)!important;
+  gap:8px!important;padding:0!important}
+body.ui-a #uiGroupFt3 .setting-fold[open]>summary{margin-bottom:7px!important}
+body.ui-a #uiGroupFt3 .fold-value{font-size:10.5px!important;color:var(--faint)!important;max-width:62%!important}
+/* 2) 删掉重复 label 后，输入框直接跟在标题下 */
+body.ui-a #uiGroupFt3 .field.ui-nolabel{margin:0!important}
+body.ui-a #uiGroupFt3 .field.ui-nolabel>input{width:100%!important}
+/* 3) 字段 chips 与输入更贴近，别再各吃一行空白 */
+body.ui-a #uiGroupFt3 .format-fields{margin:6px 0 8px!important;gap:5px!important}
+body.ui-a #uiGroupFt3 .format-fields button{font-size:11px!important;padding:2px 9px!important;min-height:24px!important;border-radius:999px!important}
+/* 4) 快捷填入：标签当前缀，三个按钮同一行 */
+body.ui-a .ui-presets-inline{display:flex!important;align-items:center;gap:6px!important;flex-wrap:wrap!important;margin:2px 0 10px!important}
+body.ui-a .ui-presets-inline .ui-presets-label{font-size:10.5px!important;color:var(--faint)!important;margin-right:2px!important;white-space:nowrap}
+body.ui-a .ui-presets-inline .btn{font-size:10.5px!important;padding:2px 8px!important;min-height:22px!important;border-radius:999px!important;height:auto!important}
+/* 5) 集数位数 + 实时样例并排：左选位数，右看结果，不再各占一整个盒子 */
+body.ui-a .ui-epmeta{display:flex!important;align-items:flex-end;gap:10px;margin:2px 0 0}
+body.ui-a .ui-epmeta>.field{flex:0 0 116px;margin:0!important;min-width:0}
+body.ui-a .ui-epmeta>.field>select{width:100%!important}
+body.ui-a .ui-epmeta>.inner{
+  flex:1 1 auto;min-width:0;margin:0!important;border:0!important;background:transparent!important;
+  padding:0 0 5px!important;text-align:right;font-size:11px!important;color:var(--faint)!important;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.ui-a .ui-epmeta>.inner code{background:transparent!important;border:0!important;padding:0!important;color:var(--dim)!important}
+/* 6) 三框那一行：缝隙固定，别贴成一整条 */
+body.ui-a .ui-frow-3up{gap:10px!important}
+/* 7) 左栏滚动区只纵向滚，横条彻底消掉（就是那块挤在卡底边的滚动条） */
+body.ui-a .ui-scroll{overflow-x:hidden!important}
+body.ui-a .ui-scroll>*{min-width:0}
+
+/* 重复标题：折叠标题已经写了名字，组内那个 label 一律藏掉（应用偶尔会重建 field，故用样式兜底） */
+body.ui-a #uiGroupFt3 .setting-fold .field:has(#ftProjectFormat)>label,
+body.ui-a #uiGroupFt3 .setting-fold .field:has(#ftEpFormat)>label{display:none!important}
+
+/* 三框行里最后一个（用户）别被拉成一条长条，最多 110px */
+body.ui-a .ui-frow-3up>.ui-mini:last-child{flex:1 1 0!important;max-width:110px!important}
+
+/* 展开时不再重复显示格式串：输入框里就是它，折叠态才留作速览 */
+body.ui-a #uiGroupFt3 .setting-fold[open]>.summary .fold-value,
+body.ui-a #uiGroupFt3 .setting-fold[open]>summary>.fold-value{display:none!important}
+
+/* ═══ F（2026-11-19）：命名格式改成「标题 / 格式 / 结果」三行式 ═══ */
+.nf-hide{display:none!important}
+body.ui-a #uiGroupFt3 .setting-fold{position:relative}
+/* 标题行：名字在左，＋（和位数）在右 */
+body.ui-a #uiGroupFt3 .nf-block>summary{display:flex!important;align-items:center!important;gap:8px!important}
+body.ui-a #uiGroupFt3 .nf-block>summary .ui-gico,
+body.ui-a #uiGroupFt3 .nf-block>summary svg{display:none!important}
+body.ui-a .nf-add{
+  margin-left:auto;flex:none;width:20px;height:20px;padding:0;border:1px solid var(--border);
+  border-radius:7px;background:var(--input);color:var(--dim);font:12px/1 "Segoe UI",sans-serif;
+  cursor:pointer;display:grid;place-items:center}
+body.ui-a .nf-add:hover{color:var(--fg);border-color:var(--dim)}
+body.ui-a .nf-pad{
+  display:flex;align-items:center;gap:5px;margin-left:auto;font-style:normal;
+  font-size:11px;font-weight:400;color:var(--faint);flex:none}
+body.ui-a .nf-pad>i{font-style:normal}
+body.ui-a .nf-pad>select{
+  height:24px!important;min-height:24px!important;padding:0 20px 0 7px!important;
+  font-size:11px!important;border-radius:7px!important;width:auto!important;min-width:0!important}
+/* 格式输入：一行，占满，不跟别的挤 */
+body.ui-a #uiGroupFt3 .nf-block .field{margin:7px 0 0!important}
+body.ui-a #uiGroupFt3 .nf-block .field>input{width:100%!important}
+/* 结果行：真正会生成的目录名，浅色，一行截断 */
+body.ui-a .nf-res{
+  display:flex;align-items:baseline;gap:6px;margin:5px 0 0;min-width:0;
+  font-size:11px;line-height:1.5;color:var(--faint)}
+body.ui-a .nf-res>i{font-style:normal;color:var(--faint);flex:none}
+body.ui-a .nf-res>b{
+  font-weight:500;color:var(--dim);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ＋ 浮层 */
+body.ui-a .nf-pop{
+  position:absolute;right:0;top:82px;z-index:30;width:258px;max-width:calc(100% + 40px);max-height:min(60vh,320px);overflow:auto;
+  padding:9px 10px 4px;border:1px solid var(--border);border-radius:11px;
+  background:#1b2028;box-shadow:0 14px 32px #00000073;display:none}
+body.ui-a .nf-pop.on{display:block}
+body.ui-a .nf-pop .nf-sec{font-size:10px;color:var(--faint);letter-spacing:.4px;margin:0 0 5px}
+body.ui-a .nf-pop .nf-row{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px;min-width:0}
+body.ui-a .nf-pop .nf-row .format-fields,
+body.ui-a .nf-pop .nf-row .format-presets{margin:0!important;gap:5px!important;display:flex!important;flex-wrap:wrap!important}
+body.ui-a .nf-pop .nf-row .format-presets>span{display:none!important}
+body.ui-a .nf-pop .nf-row .btn{
+  font-size:11px!important;padding:2px 8px!important;min-height:22px!important;
+  border-radius:999px!important;background:var(--input)!important;border:1px solid var(--border)!important}
+body.ui-a .nf-pop .nf-row .btn:hover{border-color:var(--dim)!important;color:var(--fg)!important}
+
+/* 隐藏兜底：左栏那条 .field{display:block!important} 的优先级比单个类高，这里加特定度压回来 */
+body.ui-a #page-folder .cols>.card:first-child .field.nf-hide,
+body.ui-a #page-folder .cols>.card:first-child .inner.nf-hide,
+body.ui-a #page-folder .cols>.card:first-child .nf-hide{display:none!important}
+
+
+/* ═══ G. 全软件行规：开关右置 · 结果统一为 → 行 · 四格项目信息 ═══ */
+body.ui-a #page-run .cols>.card:first-child label.check.ui-swrow,
+body.ui-a #page-folder .cols>.card:first-child label.check.ui-swrow{
+  display:flex!important;align-items:center;justify-content:space-between!important;
+  gap:10px!important;min-height:26px;margin:0!important;padding:1px 0!important}
+body.ui-a #page-run .cols>.card:first-child label.check.ui-swrow>span,
+body.ui-a #page-folder .cols>.card:first-child label.check.ui-swrow>span{
+  order:1;flex:1 1 auto;min-width:0;font-size:11.5px!important;line-height:1.35;color:var(--dim)!important}
+body.ui-a #page-run .cols>.card:first-child label.check.ui-swrow>input,
+body.ui-a #page-folder .cols>.card:first-child label.check.ui-swrow>input{
+  order:2;margin-left:auto!important;flex:0 0 auto;grid-row:auto!important;grid-column:auto!important}
+body.ui-a .ui-swcard>label.check.ui-swrow>span{font-size:12px!important;color:var(--fg)!important}
+body.ui-a .ui-sws{gap:2px}
+
+/* 结果行里搬过来的 code / 小按钮 */
+body.ui-a .nf-res>.nf-code,
+body.ui-a .nf-res b>code{
+  font:inherit;background:none;border:0;padding:0;color:inherit}
+body.ui-a .nf-res:has(.nf-btn){align-items:center}
+body.ui-a .nf-btn{
+  flex:0 0 auto;margin-left:auto;height:20px;padding:0 8px;border-radius:999px;
+  border:1px solid var(--border);background:transparent;color:var(--dim);
+  font-size:10.5px;line-height:18px;cursor:pointer}
+body.ui-a .nf-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* 项目信息（可选）：四个整行 → 一行四格 */
+body.ui-a .ui-frow-4up{gap:6px!important;margin-top:8px}
+
+/* 项目根那一行：原来是带边框盒子，改成和命名格式一样的结果行 */
+body.ui-a .ui-rootlive{
+  border:0!important;background:none!important;padding:0!important;margin:7px 0 0!important;
+  display:flex!important;flex-direction:row!important;align-items:baseline!important;gap:6px!important}
+body.ui-a .ui-rootlive>b{font-size:11px!important;color:var(--faint)!important}
+/* 标题被藏起来的折叠区，用一行小标题兜住来由 */
+body.ui-a .nf-cap{font-size:10.5px;color:var(--faint);letter-spacing:.2px;margin:10px 0 3px}
+
+/* 折叠区里的 ＋ 菜单：标题行 + 浮层（字段按钮从横排收进来） */
+body.ui-a #page-run details.setting-fold,
+body.ui-a #page-folder details.setting-fold{position:relative}
+body.ui-a .nf-head{display:flex;align-items:center;gap:8px;margin:9px 0 4px}
+body.ui-a .nf-head>span{font-size:11.5px;color:var(--dim);line-height:1.3}
+body.ui-a .nf-pop.nf-pop-chips{top:78px;width:268px;padding:10px 12px 12px}
+body.ui-a .nf-pop.nf-pop-chips .nf-sec{margin:0 0 7px}
+body.ui-a .nf-pop.nf-pop-chips .format-fields{display:flex;flex-wrap:wrap;gap:6px}
+
+/* ═══ H. 左栏去遮罩：每个功能独立成一节，参照右侧「本次建立」的排法 ═══ */
+body.ui-a #page-run .cols>.card:first-child,
+body.ui-a #page-folder .cols>.card:first-child{
+  background:transparent!important;border:0!important;border-radius:0!important;
+  box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+  padding:0 2px 0 0!important;gap:0!important}
+body.ui-a #page-run .ui-scroll,
+body.ui-a #page-folder .ui-scroll{gap:0!important}
+
+/* 一节 = 一条细线 + 小标题 + 内容，没有盒子 */
+body.ui-a .ui-group{
+  background:transparent!important;border:0!important;border-top:1px solid var(--border)!important;
+  border-radius:0!important;margin:0!important;padding:0!important;overflow:visible!important}
+body.ui-a .ui-group:first-child{border-top:0!important}
+body.ui-a .ui-group>summary{padding:11px 0 9px!important;font-size:12px!important;letter-spacing:.2px}
+body.ui-a .ui-group[open]>summary{border-bottom:0!important}
+body.ui-a .ui-group .ui-body{padding:0 0 15px!important;gap:9px!important}
+
+/* 组内的开关卡、格式子块同样不带底 */
+body.ui-a .ui-swcard{
+  background:transparent!important;border:0!important;border-radius:0!important;
+  padding:0!important;gap:6px!important}
+body.ui-a .ui-swcard+.ui-swcard{
+  border-top:1px dashed var(--border)!important;margin-top:11px!important;padding-top:11px!important}
+body.ui-a .ui-subfield{
+  background:transparent!important;border-left:0!important;border-radius:0!important;
+  padding:7px 0 0!important}
+
+/* 折叠子项之间也用线，不用第二层盒子 */
+body.ui-a #uiGroupFt3 .nf-block{
+  border:0!important;background:transparent!important;padding:0!important;margin:0!important}
+body.ui-a #uiGroupFt3 .nf-block+.nf-block{
+  border-top:1px dashed var(--border)!important;margin-top:10px!important;padding-top:10px!important}
+/* 去遮罩后仍保留左右呼吸，别贴到栏边 */
+body.ui-a #page-run .cols>.card:first-child,
+body.ui-a #page-folder .cols>.card:first-child{padding:10px 14px 0!important}
+
+/* 结果行里的按钮不许换行 */
+body.ui-a .nf-res{flex-wrap:nowrap!important}
+body.ui-a .nf-res>b{flex:1 1 auto!important;min-width:0}
+/* 结果行尾部的小按钮，压过 .btn 的基础样式 */
+body.ui-a .nf-btn{
+  height:20px!important;min-height:0!important;line-height:18px!important;padding:0 9px!important;
+  font-size:10.5px!important;border-radius:999px!important;background:transparent!important;
+  color:var(--dim)!important;align-self:center!important;display:inline-flex!important;align-items:center}
+
+/* H2：上一版被 #page-folder/.ui-group 那条 id 级规则压住了，这里同级别压回来 */
+body.ui-a #page-run .cols>.card:first-child .ui-group,
+body.ui-a #page-folder .cols>.card:first-child .ui-group{
+  background:transparent!important;border:0!important;border-top:1px solid var(--border)!important;
+  border-radius:0!important;margin:0!important;padding:0!important;overflow:visible!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group:first-child,
+body.ui-a #page-folder .cols>.card:first-child .ui-group:first-child{border-top:0!important}
+
+body.ui-a #page-run .cols>.card:first-child .ui-group>summary,
+body.ui-a #page-folder .cols>.card:first-child .ui-group>summary{
+  padding:11px 0 9px!important;font-size:12px!important;letter-spacing:.2px!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group[open]>summary,
+body.ui-a #page-folder .cols>.card:first-child .ui-group[open]>summary{border-bottom:0!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group .ui-body,
+body.ui-a #page-folder .cols>.card:first-child .ui-group .ui-body{
+  padding:0 0 15px!important;gap:9px!important}
+
+body.ui-a #page-run .cols>.card:first-child .ui-swcard,
+body.ui-a #page-folder .cols>.card:first-child .ui-swcard{
+  background:transparent!important;border:0!important;border-radius:0!important;
+  padding:0!important;gap:6px!important}
+body.ui-a #page-run .cols>.card:first-child .ui-subfield,
+body.ui-a #page-folder .cols>.card:first-child .ui-subfield{
+  background:transparent!important;border-left:0!important;border-radius:0!important;padding:7px 0 0!important}
+body.ui-a #page-run .cols>.card:first-child .ui-swcard .ui-subfield,
+body.ui-a #page-folder .cols>.card:first-child .ui-swcard .ui-subfield{
+  background:transparent!important;border:0!important;padding:6px 0 0!important}
+/* H2 里 border:0 把虚线分隔也清了，这里补回来 */
+body.ui-a #page-run .cols>.card:first-child .ui-swcard+.ui-swcard,
+body.ui-a #page-folder .cols>.card:first-child .ui-swcard+.ui-swcard{
+  border-top:1px dashed var(--border)!important;margin-top:12px!important;padding-top:12px!important}
+body.ui-a #uiGroupFt3 .nf-block+.nf-block{
+  border-top:1px dashed var(--border)!important;margin-top:11px!important;padding-top:11px!important}
+
+/* ═══ K. 复盘四条：节头降格成标签、右边界统一、结果行贴近、控件描边降权 ═══ */
+/* 1) 节头按右侧栏的「t」样式：小字 + 字距 + 淡色；字段标签反而更像正文 */
+body.ui-a #page-run .cols>.card:first-child .ui-group>summary,
+body.ui-a #page-folder .cols>.card:first-child .ui-group>summary{
+  padding:13px 0 9px!important;font-size:10.5px!important;font-weight:600!important;
+  letter-spacing:.55px!important;color:var(--faint)!important;gap:7px!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group>summary:hover,
+body.ui-a #page-folder .cols>.card:first-child .ui-group>summary:hover{color:var(--dim)!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group>summary .ui-sum,
+body.ui-a #page-folder .cols>.card:first-child .ui-group>summary .ui-sum{
+  font-size:10px!important;font-weight:500!important;letter-spacing:.3px!important;color:var(--faint)!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group>summary .ui-gico,
+body.ui-a #page-folder .cols>.card:first-child .ui-group>summary .ui-gico{opacity:.5}
+
+/* 2) 四格一行：等级/日期/用户/集数，右端一律落在栏右 */
+body.ui-a .ui-frow-4col{gap:6px!important}
+body.ui-a .ui-frow-4col>.ui-mini{min-width:0}
+body.ui-a .ui-frow-4col>.ui-mini>label{font-size:11px!important;margin-bottom:4px!important}
+
+/* 3) 结果行贴住它解释的输入框，离下一节远一点 */
+body.ui-a .nf-res{margin:3px 0 -6px!important}
+
+/* 4) 控件描边降权：结构线比控件线更显眼 */
+body.ui-a #page-run .cols>.card:first-child .field>input,
+body.ui-a #page-run .cols>.card:first-child .field>select,
+body.ui-a #page-folder .cols>.card:first-child .field>input,
+body.ui-a #page-folder .cols>.card:first-child .field>select{
+  border-color:color-mix(in srgb,var(--border) 62%,transparent)!important}
+body.ui-a #page-run .cols>.card:first-child .field>input:focus,
+body.ui-a #page-folder .cols>.card:first-child .field>input:focus{
+  border-color:var(--accent)!important}
+
+/* 浏览… → 30×30 图标钮 */
+body.ui-a .ui-iconbtn{
+  width:30px!important;min-width:30px!important;height:30px!important;min-height:30px!important;
+  padding:0!important;flex:0 0 auto!important;display:grid!important;place-items:center!important;
+  border-radius:8px!important;color:var(--dim)!important}
+body.ui-a .ui-iconbtn:hover{color:var(--fg)!important}
+
+/* 顶端与两侧栏的标题基线对齐 */
+body.ui-a #page-run .cols>.card:first-child,
+body.ui-a #page-folder .cols>.card:first-child{padding-top:16px!important}
+/* 描边降权要覆盖到「被 rowify / miniField 搬走的输入框」 */
+body.ui-a #page-run .cols>.card:first-child input[type=text],
+body.ui-a #page-run .cols>.card:first-child select,
+body.ui-a #page-folder .cols>.card:first-child input[type=text],
+body.ui-a #page-folder .cols>.card:first-child select{
+  border-color:color-mix(in srgb,var(--border) 62%,transparent)!important}
+body.ui-a #page-run .cols>.card:first-child input[type=text]:focus,
+body.ui-a #page-folder .cols>.card:first-child input[type=text]:focus{
+  border-color:var(--accent)!important}
+
+/* 节头基线要和中间「目录树预览」、右边「本次建立」的标题齐 */
+body.ui-a #page-run .cols>.card:first-child,
+body.ui-a #page-folder .cols>.card:first-child{padding-top:34px!important}
+
+/* ═══ L. 三级遮罩：左栏一级 → 功能节二级 → 格式块三级，逐级内缩 ═══ */
+/* 一级：整条左栏一块底 */
+body.ui-a #page-folder .cols>.card:first-child{
+  background:var(--surface)!important;border:1px solid var(--border)!important;
+  border-radius:14px!important;padding:10px 12px 6px!important;
+  -webkit-backdrop-filter:blur(10px)!important;backdrop-filter:blur(10px)!important}
+
+/* 二级：模板与输出 / 项目信息 / 命名格式，各自一块，右侧留出缩进 */
+body.ui-a #page-folder .cols>.card:first-child .ui-group,
+body.ui-a #page-folder .cols>.card:first-child .ui-group:first-child{
+  background:color-mix(in srgb, var(--surface) 74%, var(--input))!important;
+  border:1px solid var(--border)!important;border-top:1px solid var(--border)!important;
+  border-radius:12px!important;margin:0 0 9px 5px!important;padding:0!important;overflow:hidden!important}
+body.ui-a #page-folder .cols>.card:first-child .ui-scroll{gap:0!important}
+
+body.ui-a #page-folder .cols>.card:first-child .ui-group>summary{
+  padding:10px 12px!important;font-size:11.5px!important;letter-spacing:.2px!important;
+  color:var(--fg)!important;font-weight:600!important}
+body.ui-a #page-folder .cols>.card:first-child .ui-group>summary .ui-sum{
+  font-size:10.5px!important;color:var(--faint)!important;font-weight:400!important}
+body.ui-a #page-folder .cols>.card:first-child .ui-group[open]>summary{
+  border-bottom:1px solid var(--border)!important}
+body.ui-a #page-folder .cols>.card:first-child .ui-group .ui-body{
+  padding:10px 12px 12px!important;gap:9px!important}
+
+/* 三级：三个格式块，再往里缩一格 */
+body.ui-a #page-folder .cols>.card:first-child .nf-block{
+  background:var(--input)!important;border:1px solid var(--border)!important;
+  border-radius:10px!important;margin:0 0 8px 8px!important;padding:8px 10px 10px!important}
+body.ui-a #page-folder .cols>.card:first-child .nf-block+.nf-block{margin-top:0!important}
+body.ui-a #page-folder .cols>.card:first-child .nf-block>summary{
+  padding:0 0 7px!important;font-size:11.5px!important;color:var(--fg)!important;font-weight:600!important}
+body.ui-a #page-folder .cols>.card:first-child .nf-block[open]>summary{border-bottom:0!important}
+body.ui-a #page-folder .cols>.card:first-child .nf-block .field{margin:0!important}
+body.ui-a #page-folder .cols>.card:first-child .nf-block .ui-fhint{display:none!important}
+
+/* 三级块里的输入框比二级底再亮一档，避免三层同色糊成一片 */
+body.ui-a #page-folder .cols>.card:first-child .nf-block input[type=text],
+body.ui-a #page-folder .cols>.card:first-child .nf-block select{
+  background:color-mix(in srgb, var(--input) 55%, var(--surface))!important}
+
+/* 工程文件块并进命名格式后，它自带的开关与脚注也留在三级区 */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .ui-body>label.check,
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .ui-body>.ui-note{
+  margin-left:8px!important}
+/* 三级遮罩改为「每级左右对称内缩」 */
+body.ui-a #page-folder .cols>.card:first-child .ui-group,
+body.ui-a #page-folder .cols>.card:first-child .ui-group:first-child{
+  margin:0 6px 9px 6px!important}
+body.ui-a #page-folder .cols>.card:first-child .ui-group .ui-body{
+  padding:10px 10px 12px!important}
+body.ui-a #page-folder .cols>.card:first-child .nf-block,
+body.ui-a #page-folder .cols>.card:first-child .nf-block+.nf-block{
+  margin:0 0 8px 0!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .ui-body>label.check,
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .ui-body>.ui-note{margin-left:0!important}
+/* 第三个三级块：标题下的处理方式与开关 */
+body.ui-a #page-folder .cols>.card:first-child #ftFileDetails>label.check{
+  margin:8px 0 0 0!important}
+/* 左栏内容高于窗口时：滚动区收缩，不要溢出到一级遮罩外面（窄窗下会把结论条顶出边框） */
+body.ui-a #page-folder .cols>.card:first-child .ui-scroll{min-height:0!important;overflow-y:auto!important}
+body.ui-a #page-folder .cols>.card:first-child{overflow:hidden!important}
+/* ═══ N. 三个格式块不再各自成卡：命名格式里三行连续条目，细线分隔，收纵向空间 ═══ */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .ui-body{
+  padding:6px 10px 10px!important;gap:0!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block{
+  background:transparent!important;border:0!important;border-radius:0!important;
+  margin:0!important;padding:13px 0 3px!important;
+  border-top:1px solid color-mix(in srgb, var(--border) 78%, transparent)!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block:first-child,
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .ui-body>.nf-block:first-of-type{
+  border-top:0!important;padding-top:4px!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary{
+  padding:0!important;font-size:11.5px!important;font-weight:600!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block .field{
+  margin:6px 0 0!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block .nf-res{
+  margin:4px 0 0!important;font-size:11px!important}
+/* 第三行（工程文件）：标题下的处理方式与开关，同样压紧 */
+body.ui-a #page-folder .cols>.card:first-child #ftFileDetails{padding-bottom:8px!important}
+body.ui-a #page-folder .cols>.card:first-child #ftFileDetails .field:has(#ftPtx){
+  margin:8px 0 0!important}
+body.ui-a #page-folder .cols>.card:first-child #ftFileDetails>label.check{
+  margin:8px 0 0!important}
+/* ═══ O. 命名格式三行：首行（标题行）统一缩进，正文顶格 ═══ */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary{
+  list-style:none!important;padding-left:14px!important;gap:7px!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary::-webkit-details-marker{
+  display:none!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary::before{
+  content:"▾";flex:none;width:9px;text-align:center;font-size:9px;line-height:1;
+  color:var(--faint);transform:translateY(-1px)}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block:not([open])>summary::before{
+  content:"▸"}
+/* ═══ P. 命名格式三行：标题降为说明标签，格式串为主角（取消大缩进与粗体） ═══ */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block{
+  padding:12px 0 2px!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary{
+  list-style:none!important;padding-left:0!important;gap:5px!important;
+  font-size:10.5px!important;font-weight:500!important;color:var(--dim)!important;
+  letter-spacing:.4px!important;line-height:1.4!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary::before{
+  width:7px;font-size:7px;opacity:.55;color:var(--faint)}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary .nf-add{
+  opacity:.55;font-size:11px!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary .nf-add:hover{
+  opacity:1}
+/* 标题行右侧的小控件同档降级，别比标题还亮 */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary select{
+  font-size:10.5px!important;height:22px!important;padding:0 4px 0 7px!important;
+  color:var(--dim)!important;background:color-mix(in srgb, var(--input) 55%, var(--surface))!important;
+  border:1px solid color-mix(in srgb, var(--border) 80%, transparent)!important;border-radius:6px!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary>label,
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block>summary>span{
+  font-size:10.5px!important;color:var(--faint)!important}
+/* 格式串：留一点呼吸，结果行同档但更淡 */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block .field{margin:7px 0 0!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block .nf-res{
+  margin:5px 0 0!important;font-size:10.5px!important;color:var(--dim)!important}
+/* 第三行：处理方式标签与下拉，同档 */
+body.ui-a #page-folder .cols>.card:first-child #ftFileDetails .field>label{
+  font-size:10.5px!important;color:var(--dim)!important;letter-spacing:.4px!important}
+body.ui-a #page-folder .cols>.card:first-child #ftFileDetails select{
+  font-size:11px!important}
+/* ═══ Q. 改名预览并到规则行右侧：格式串左、结果右，三行等高对齐 ═══ */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line{
+  display:flex!important;align-items:center!important;gap:9px!important;margin:7px 0 0!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line>.field{
+  flex:1 1 auto!important;min-width:92px!important;margin:0!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line>.nf-res{
+  flex:0 1 auto!important;min-width:0!important;margin:0!important;
+  justify-content:flex-end!important;white-space:nowrap!important;
+  overflow:hidden!important;text-overflow:ellipsis!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line>.nf-res>b{
+  overflow:hidden!important;text-overflow:ellipsis!important}
+/* 窄窗：结果行回落到格式串下方，避免被截断得看不清 */
+@media (max-width:900px){
+  body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line{
+    display:block!important}
+  body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line>.nf-res{
+    justify-content:flex-start!important;margin-top:5px!important}
+}
+/* 结果固定贴右边缘，三行右边界对齐 */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line>.nf-res{
+  flex:0 0 auto!important;margin-left:auto!important}
+/* 规则行改成两列栅格：左列规则等宽、右列预览等宽且左对齐，超长时允许换行而不是截断 */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,42%)!important;
+  align-items:start!important;column-gap:10px!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line>.field{
+  min-width:0!important;margin:0!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line>.nf-res{
+  margin:0!important;justify-content:flex-start!important;min-width:0!important;
+  white-space:normal!important;overflow:visible!important;text-overflow:clip!important;
+  line-height:1.3!important;padding-top:6px!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line>.nf-res>b{
+  overflow-wrap:anywhere!important}
+@media (max-width:900px){
+  body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line{
+    display:block!important}
+  body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line>.nf-res{
+    padding-top:5px!important}
+}
+/* ═══ R. 再压一档：删「工程文件处理」标签、删左栏底部结论条，行距收紧 ═══ */
+/* 第三行：select 自带值（重命名（与集数文件夹同名）），标签文字是重复信息，去掉 */
+body.ui-a #page-folder .cols>.card:first-child #ftFileDetails .field:has(#ftPtx)>label{
+  display:none!important}
+body.ui-a #page-folder .cols>.card:first-child #ftFileDetails .field:has(#ftPtx){
+  margin:7px 0 0!important}
+/* 结论条撤掉后，卡片底部不再留它的位置 */
+body.ui-a #page-folder .cols>.card:first-child>.ui-scroll{
+  padding-bottom:2px!important}
+/* 三个格式块之间再收 2px，行内上下留白也压一档 */
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-block{
+  padding:10px 0 2px!important}
+body.ui-a #page-folder .cols>.card:first-child #uiGroupFt3 .nf-line{
+  margin-top:6px!important}
+body.ui-a #page-folder .cols>.card:first-child #ftFileDetails>label.check{
+  margin:7px 0 0!important}
+/* ═══ S. 批量分组页套用同一套层级与行规 + 去掉演示态横幅 ═══ */
+/* 演示态横幅（浏览器/无壳时右下角那句）不再显示 */
+#demoTip{display:none!important}
+
+/* 一级 / 二级遮罩 */
+body.ui-a #page-run .cols>.card:first-child{
+  background:var(--surface)!important;border:1px solid var(--border)!important;
+  border-radius:14px!important;padding:10px 12px 6px!important;
+  -webkit-backdrop-filter:blur(10px)!important;backdrop-filter:blur(10px)!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group{
+  background:color-mix(in srgb, var(--surface) 74%, var(--input))!important;
+  border:1px solid var(--border)!important;border-radius:12px!important;
+  margin:0 6px 9px 6px!important;padding:0!important;overflow:hidden!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group>summary{
+  padding:10px 12px!important;font-size:11.5px!important;color:var(--fg)!important;font-weight:600!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group[open]>summary{
+  border-bottom:1px solid var(--border)!important}
+body.ui-a #page-run .cols>.card:first-child .ui-group .ui-body{
+  padding:10px 10px 12px!important;gap:8px!important}
+body.ui-a #page-run .cols>.card:first-child .ui-scroll{min-height:0!important;overflow-y:auto!important}
+body.ui-a #page-run .cols>.card:first-child{overflow:hidden!important}
+
+/* 三级：改名规则里的两个格式块，去卡、细线分隔、标题降级 */
+body.ui-a #page-run .cols>.card:first-child .nf-block{
+  background:transparent!important;border:0!important;border-radius:0!important;
+  margin:0!important;padding:11px 0 2px!important;
+  border-top:1px solid color-mix(in srgb, var(--border) 78%, transparent)!important}
+body.ui-a #page-run .cols>.card:first-child .nf-block:first-child{
+  border-top:0!important;padding-top:2px!important}
+body.ui-a #page-run .cols>.card:first-child .nf-block>summary{
+  list-style:none!important;padding:0!important;gap:5px!important;
+  font-size:10.5px!important;font-weight:500!important;color:var(--dim)!important;letter-spacing:.4px!important}
+body.ui-a #page-run .cols>.card:first-child .nf-block>summary::-webkit-details-marker{display:none!important}
+body.ui-a #page-run .cols>.card:first-child .nf-block>summary::before{
+  content:"▾";flex:none;width:7px;text-align:center;font-size:7px;opacity:.55;color:var(--faint)}
+body.ui-a #page-run .cols>.card:first-child .nf-block:not([open])>summary::before{content:"▸"}
+
+/* 规则与样例同一行两列 */
+body.ui-a #page-run .cols>.card:first-child .nf-line{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,42%)!important;
+  align-items:start!important;column-gap:10px!important;margin-top:6px!important}
+body.ui-a #page-run .cols>.card:first-child .nf-line>.field{min-width:0!important;margin:0!important}
+body.ui-a #page-run .cols>.card:first-child .nf-line>.nf-res,
+body.ui-a #page-run .cols>.card:first-child .nf-line>.inner{
+  margin:0!important;min-width:0!important;justify-content:flex-start!important;
+  font-size:10.5px!important;color:var(--dim)!important;line-height:1.35!important;padding-top:6px!important;
+  white-space:normal!important;display:flex!important;flex-wrap:wrap!important;gap:4px!important;align-items:center!important}
+/* 开关行与它们控制的格式块贴近，别各占一块 */
+body.ui-a #page-run .cols>.card:first-child #uiSwDir,
+body.ui-a #page-run .cols>.card:first-child #uiSwFile{
+  background:transparent!important;border:0!important;padding:0!important;margin:0!important}
+body.ui-a #page-run .cols>.card:first-child #uiSwDir .setting-fold>summary,
+body.ui-a #page-run .cols>.card:first-child #uiSwFile .setting-fold>summary{
+  display:none!important}
+@media (max-width:900px){
+  body.ui-a #page-run .cols>.card:first-child .nf-line{display:block!important}
+}
+/* 上一段把 summary 一起藏了，导致「文件名格式」标题丢了：只藏重复的 field 标签，标题行留着当说明 */
+body.ui-a #page-run .cols>.card:first-child #uiSwDir .setting-fold>summary,
+body.ui-a #page-run .cols>.card:first-child #uiSwFile .setting-fold>summary{
+  display:flex!important}
+body.ui-a #page-run .cols>.card:first-child #runGroupDetails .field>label,
+body.ui-a #page-run .cols>.card:first-child #runFileDetails .field>label{
+  display:none!important}
+/* 分组文件夹格式：summary 与 field 标签内容重复，留标题标签一份（样例已由右侧列给出） */
+body.ui-a #page-run .cols>.card:first-child #runGroupDetails>summary{display:none!important}
+body.ui-a #page-run .cols>.card:first-child #runGroupDetails .field>label{
+  display:block!important;font-size:10.5px!important;font-weight:500!important;
+  color:var(--dim)!important;letter-spacing:.4px!important;margin:0 0 6px!important}
+/* 分组文件夹格式的标题分别在 summary 与 .nf-head 各有一份：留 .nf-head（它带 ＋），summary 收掉 */
+body.ui-a #page-run .cols>.card:first-child #uiSwDir #runGroupDetails.setting-fold>summary{
+  display:none!important}
+body.ui-a #page-run .cols>.card:first-child #runGroupDetails .nf-head{
+  margin:0 0 6px!important;gap:6px!important}
+body.ui-a #page-run .cols>.card:first-child #runGroupDetails .nf-head>span{
+  font-size:10.5px!important;font-weight:500!important;color:var(--dim)!important;letter-spacing:.4px!important}
+body.ui-a #page-run .cols>.card:first-child #runGroupDetails .nf-head .nf-add{
+  opacity:.55!important;margin-left:auto!important}
+/* 文件名格式：标题行同档降级 */
+body.ui-a #page-run .cols>.card:first-child #runFileDetails>summary{
+  font-size:10.5px!important;font-weight:500!important;color:var(--dim)!important;letter-spacing:.4px!important}
+body.ui-a #page-run .cols>.card:first-child #runFileDetails>summary .fold-value{
+  font-size:10.5px!important;color:var(--faint)!important;font-weight:400!important}

@@ -1,19 +1,65 @@
-"""H版独立本机记忆：原子写入，路径/窗口不写入T版或共享配置。"""
+"""H版独立本机记忆：原子写入，路径/窗口不写入T版或共享配置。
+
+v4.3.9（2026-11-17）：冻结包的记忆目录从「exe 所在目录」改为「%LOCALAPPDATA%\\RenameProject」。
+原因：exe 目录是发行包，换版本/换包时整目录被替换或归档，用户参数（模板路径、命名结构、窗口位置）
+会随之消失，每次更新都得重新填一遍。记忆本来就叫 .local（本机专属），挪到用户目录才不会跟包走。
+旧包目录里的记忆文件在首次启动时自动搬过来（只复制，不删除）。
+"""
 from __future__ import annotations
 import json
 import os
+import shutil
 import sys
 import threading
 from pathlib import Path
 
 THEMES=('dark','claude','warm','ocean')
 
+PREFS_DIR_NAME='RenameProject'
+
+def _prefs_root():
+    """记忆目录：显式环境变量 > 用户本机目录（冻结）> 仓库构建目录（源码运行）。"""
+    env=os.environ.get('PT_H_PREFS_ROOT')
+    if env:
+        return Path(env)
+    if getattr(sys,'frozen',False):
+        base=os.environ.get('LOCALAPPDATA') or str(Path.home()/'AppData'/'Local')
+        return Path(base)/PREFS_DIR_NAME
+    return Path(__file__).resolve().parents[3]/'build'/'local-preferences'
+
 class Preferences:
     def __init__(self, tool):
-        root=Path(os.environ.get('PT_H_PREFS_ROOT') or (Path(sys.executable).parent if getattr(sys,'frozen',False) else Path(__file__).resolve().parents[3]/'build'/'local-preferences'))
+        root=_prefs_root()
         self.path=root/(tool+('.preferences.local.json' if tool=='re' else '.h-preferences.local.json'))
         self.legacy_path=root/'re.h-preferences.local.json' if tool=='re' else None
         self.lock=threading.RLock()
+        self._adopt_legacy(tool)
+
+    def _adopt_legacy(self,tool):
+        """首发迁移：旧版把记忆写在 exe 旁（更早的版本迁过一次到 %LOCALAPPDATA%），
+        这里依次把它们搬到当前目录（已存在则不覆盖）。"""
+        if not getattr(sys,'frozen',False) or self.path.exists():
+            return
+        exe_dir=Path(sys.executable).parent
+        local_dir=Path(os.environ.get('LOCALAPPDATA') or str(Path.home()/'AppData'/'Local'))/PREFS_DIR_NAME
+        names=[tool+'.preferences.local.json', tool+'.h-preferences.local.json']
+        if tool=='re':
+            names.append('re.h-preferences.local.json')
+        for base in (exe_dir, local_dir):
+            if base==self.path.parent:
+                continue
+            for name in names:
+                src=base/name
+                try:
+                    if not src.is_file():
+                        continue
+                    self.path.parent.mkdir(parents=True,exist_ok=True)
+                    shutil.copy2(src,self.path)
+                    print('[prefs] 已接管旧记忆: %s -> %s'%(src,self.path),flush=True)
+                    return
+                except OSError as exc:
+                    print('[prefs] 迁移失败(忽略): %s'%exc,flush=True)
+                    return
 
     def read(self):
         with self.lock:

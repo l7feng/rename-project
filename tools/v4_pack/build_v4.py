@@ -6,6 +6,8 @@
 """
 from __future__ import annotations
 import argparse
+import fnmatch
+import hashlib
 import json
 import re
 import datetime
@@ -23,10 +25,16 @@ for _s in (sys.stdout, sys.stderr):
 
 REPO = Path(__file__).resolve().parent.parent.parent
 V4 = REPO / "src" / "v4"
-WEB = Path(os.environ.get("PT_WEB_ROOT", str(REPO / "web")))
+# web 源默认锁仓库；PT_WEB_ROOT 仍可用，但必须显式设置并会被写进 manifest 留痕。
+WEB_ENV = os.environ.get("PT_WEB_ROOT")
+WEB = Path(WEB_ENV) if WEB_ENV else REPO / "web"
 PACK = REPO / "tools" / "v4_pack"
 sys.path.insert(0, str(REPO / "tools"))
 from build import default_out_root
+
+# 发布包不该带的东西：本地备份、字节码、编辑器残留。
+EXCLUDE_PATTERNS = ("*.bak*", "*.pyc", "*.pyo", "*.tmp", "*.orig", "*.rej", "*~")
+WEB_MANIFEST_NAME = "build-manifest.json"
 
 TOOLS = {
     "pt": {
@@ -50,13 +58,88 @@ TOOLS = {
         "entry": "shell.re_desktop",
         "name": "rename-project-v4",
         "zh": "Rename Project",
-        "folder": "03-Rename Project/rename-project",
+        "folder": "03-Rename Project（统一命名归位）/rename-project",
         "hidden": ["api.re_api", "shell.httpd", "ptools.core.config"],
     },
 }
 
 # This independent distribution only builds its own application.
 TOOLS = {"re": TOOLS["re"]}
+
+# 工具核心源码随包落地：re_api 的 RE_CODE = <发行根>/rename-project/code，
+# 冻结后 PYZ 若漏收这些模块，运行时只能从这个目录找回它们（纯 stdlib，可外部导入）。
+CORE_SOURCES = {
+    "re": (REPO / "src" / "rename-project" / "code",
+           ("core_rules.py", "foldertree.py", "config.py", "naming_formats.py")),
+}
+
+
+def stage_core_sources(app: Path, key: str) -> None:
+    spec = CORE_SOURCES.get(key)
+    if spec is None:
+        return
+    src, files = spec
+    dest = Path(app) / "rename-project" / "code"
+    dest.mkdir(parents=True, exist_ok=True)
+    for filename in files:
+        shutil.copy2(src / filename, dest / filename)
+
+
+def is_excluded(rel: str) -> bool:
+    """按白名单排除发布包不该带的文件（路径用 posix 风格）。"""
+    name = rel.rsplit("/", 1)[-1]
+    return any(fnmatch.fnmatch(name, pat) for pat in EXCLUDE_PATTERNS)
+
+
+def web_manifest(web_root: Path) -> dict:
+    """web 目录下每个文件的内容哈希（排除备份/字节码）。"""
+    files = {}
+    for path in sorted(Path(web_root).rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(Path(web_root)).as_posix()
+        if is_excluded(rel):
+            continue
+        files[rel] = hashlib.sha256(path.read_bytes()).hexdigest()
+    return files
+
+
+def verify_web(final: Path, web_root: Path, required: tuple = ()) -> list:
+    """构建后校验：产物里每个 web 文件都必须与源逐字节一致，且必需文件都在。
+
+    裁剪掉的其他 App 资源不参与比对，但任何「与源不一致」或「源里没有」的文件都算问题
+    ——那正是这次 4.3.9 快照错位的形式。
+    """
+    source = web_manifest(web_root)
+    actual = web_manifest(final / "_internal" / "web")
+    problems = []
+    for rel in required:
+        if rel not in actual:
+            problems.append("必需文件缺失：%s" % rel)
+    for rel, digest in actual.items():
+        if rel == WEB_MANIFEST_NAME:
+            continue
+        if rel not in source:
+            problems.append("源中不存在：%s" % rel)
+        elif source[rel] != digest:
+            problems.append("内容与源不一致：%s" % rel)
+    return problems
+
+
+def write_web_manifest(final: Path, key: str, version: str) -> Path:
+    """把构建清单写进包内，供发布后自查（源目录、哈希、构建时间）。"""
+    web_dir = final / "_internal" / "web"
+    payload = {
+        "tool": key,
+        "version": version,
+        "web_source": str(WEB),
+        "web_source_from_env": bool(WEB_ENV),
+        "built_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "files": web_manifest(web_dir),
+    }
+    target = web_dir / WEB_MANIFEST_NAME
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return target
 
 ENTRY_TMPL = '''# -*- coding: utf-8 -*-
 """v4 壳打包入口（{zh}）——源码直跑与打包后双兼容。
@@ -123,8 +206,7 @@ def build_one(key: str, out_root: Path, py: str, date: str) -> int:
         "--add-data", str(V4 / "api") + os.pathsep + "api",
         "--add-data", str(V4 / "shell") + os.pathsep + "shell",
     ]
-    letter = {'pt':'p','jy':'j','re':'r'}[key]
-    cmd += ['--icon', str(WEB / 'assets' / 'logos' / (letter + '.ico'))]
+    cmd += ['--icon', str(WEB / 'assets' / 'icons' / key / 'app.ico')]
     for h in cfg["hidden"]:
         cmd += ["--hidden-import", h]
     # 工具核心源码（同进程直调，非 pip 包）；ptools 家族级依赖三个工具都带上
@@ -134,7 +216,9 @@ def build_one(key: str, out_root: Path, py: str, date: str) -> int:
     if key == "re":
         cmd += ["--paths", str(REPO / "src" / "rename-project" / "code")]
     cmd += ["--collect-all", "webview", "--collect-all", "pythonnet"]
-    cmd += ["--hidden-import", "core_rules", "--hidden-import", "foldertree", "--hidden-import", "config", "--hidden-import", "naming_formats"]
+    # logging.handlers 是 config.py 的模块级依赖；纯 stdlib 子模块若无人静态 import，
+    # PyInstaller 不会收集，冻结后 import config 会 ModuleNotFoundError。
+    cmd += ["--hidden-import", "core_rules", "--hidden-import", "foldertree", "--hidden-import", "config", "--hidden-import", "naming_formats", "--hidden-import", "logging.handlers"]
     cmd += ["--exclude-module", "tkinter", "--exclude-module", "PyQt5",
             "--exclude-module", "IPython", "--exclude-module", "pytest"]
     cmd.append(str(entry_file))
@@ -172,6 +256,18 @@ def build_one(key: str, out_root: Path, py: str, date: str) -> int:
         print("[v4-pack] WARN %s: exe not found at %s" % (key, exe))
     from finish_distribution import finish_distribution
     finish_distribution(final, REPO, key)
+    stage_core_sources(final, key)
+
+    required = ("re.html" if key == "re" else ("index.html" if key == "pt" else "jy.html"),
+                "assets/ui-refine.css", "js/ui-refine.js", "js/re.js" if key == "re" else "js/app.js")
+    problems = verify_web(final, WEB, required)
+    if problems:
+        print("[v4-pack] FAIL %s: 产物与 web 源不一致（%d 项）" % (key, len(problems)))
+        for line in problems[:20]:
+            print("  - " + line)
+        return 3
+    manifest = write_web_manifest(final, key, version)
+    print("[v4-pack] web 校验通过，清单写入 %s" % manifest.name)
     return 0
 
 
